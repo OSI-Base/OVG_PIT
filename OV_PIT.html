@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OV Product Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & VARIABLES ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#111C3A;--navy2:#1A2D5A;--pink:#F1577D;--pink-bg:#FDE8EE;
+  --bg:#F7F9FC;--white:#fff;--border:#E8ECF4;--text:#1A2340;--muted:#6B7A99;
+  --sh0:0 1px 4px rgba(17,28,58,.06);--sh1:0 4px 16px rgba(17,28,58,.09);--sh2:0 12px 40px rgba(17,28,58,.14);
+  --r:10px;--rl:16px;--rx:20px;--navh:60px;--sidew:272px;--font:'DM Sans',sans-serif;
+  --cv:#16A34A;--co:#65A30D;--ck:#2563EB;--ch:#7C3AED;--cr:#D97706;--cf:#0891B2;--cn:#9333EA;--ca:#059669;
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text)}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+
+/* ── NAV ── */
+.nav{position:fixed;top:0;left:0;right:0;height:var(--navh);background:var(--navy);display:flex;align-items:center;padding:0 20px;gap:20px;z-index:100;box-shadow:0 2px 16px rgba(17,28,58,.25)}
+.brand{display:flex;align-items:center;gap:9px;color:#fff;font-weight:700;font-size:16px;letter-spacing:-.3px;white-space:nowrap}
+.brand-dot{width:7px;height:7px;border-radius:50%;background:var(--pink)}
+.nav-tabs{display:flex;gap:3px}
+.ntab{color:rgba(255,255,255,.55);padding:6px 15px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:500;border:none;background:none;font-family:var(--font);transition:all .15s}
+.ntab:hover{color:#fff;background:rgba(255,255,255,.09)}
+.ntab.on{color:#fff;background:rgba(241,87,125,.22)}
+.spacer{flex:1}
+.nav-actions{display:flex;align-items:center;gap:7px}
+.nbtn{display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;border:none;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+.nb-ghost{background:rgba(255,255,255,.1);color:#fff}.nb-ghost:hover{background:rgba(255,255,255,.17)}
+.nb-primary{background:var(--pink);color:#fff}.nb-primary:hover{background:#d9406a}
+.nb-admin{background:rgba(255,255,255,.07);color:rgba(255,255,255,.65)}.nb-admin.on{background:rgba(241,87,125,.28);color:var(--pink)}
+
+/* ── BANNER ── */
+.banner{position:fixed;top:var(--navh);left:0;right:0;z-index:90;background:#fffbeb;border-bottom:1px solid #fcd34d;padding:9px 20px;font-size:13px;color:#78350f;display:flex;align-items:center;gap:8px}
+.banner a{color:#92400e;font-weight:600;text-decoration:underline;cursor:pointer}
+.hidden{display:none!important}
+
+/* ── LAYOUT ── */
+.app{display:flex;padding-top:var(--navh);min-height:100vh}
+.app.shifted{padding-top:calc(var(--navh) + 41px)}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidew);flex-shrink:0;background:var(--white);border-right:1px solid var(--border);height:calc(100vh - var(--navh));position:sticky;top:var(--navh);overflow-y:auto;transition:top .2s,height .2s}
+.sidebar.shifted{top:calc(var(--navh)+41px);height:calc(100vh - var(--navh) - 41px)}
+.sb-top{padding:14px 16px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.sb-h{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+.sb-clr{font-size:12px;color:var(--pink);cursor:pointer;font-weight:500}.sb-clr:hover{text-decoration:underline}
+.sb-sec{padding:13px 16px;border-bottom:1px solid var(--border)}
+.sb-sec-h{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.sb-mgr{font-size:11px;color:var(--pink);cursor:pointer;text-transform:none;letter-spacing:0;font-weight:500}.sb-mgr:hover{text-decoration:underline}
+.chklist{display:flex;flex-direction:column;gap:5px;max-height:160px;overflow-y:auto}
+.chkrow{display:flex;align-items:center;gap:8px;cursor:pointer;padding:2px 0}
+.chkrow input{width:14px;height:14px;accent-color:var(--pink);cursor:pointer;flex-shrink:0}
+.chklbl{font-size:13px;flex:1}.chkct{font-size:11px;color:var(--muted);background:var(--bg);padding:1px 6px;border-radius:99px}
+/* dual range */
+.sldr-vals{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:10px}
+.sldr-vals strong{color:var(--text);font-weight:600}
+.drange{position:relative;height:22px}
+.drange input[type=range]{position:absolute;width:100%;height:4px;top:9px;background:transparent;-webkit-appearance:none;pointer-events:none;outline:none}
+.drange input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--navy);border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.22);cursor:pointer;pointer-events:all;transition:background .15s}
+.drange input[type=range]::-webkit-slider-thumb:hover{background:var(--pink)}
+.rtrack{position:absolute;height:4px;background:var(--border);border-radius:2px;top:11px;left:0;right:0}
+.rfill{position:absolute;height:4px;background:var(--pink);border-radius:2px;top:11px}
+.mini-row{display:flex;gap:8px;margin-top:10px}
+.mini-g{flex:1}.mini-g label{font-size:10px;color:var(--muted);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
+.mini-g input{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:7px;font-family:var(--font);font-size:12px;background:var(--bg);outline:none;color:var(--text)}
+.mini-g input:focus{border-color:var(--navy)}
+.sb-admin{padding:13px 16px}
+.sb-admin .sbtn{width:100%;margin-bottom:7px}
+
+/* ── MAIN ── */
+.main{flex:1;padding:24px;min-width:0}
+.vsec{display:none}.vsec.on{display:block}
+
+/* ── SEARCH ── */
+.swrap{position:relative;margin-bottom:18px}
+.sico{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.sinput{width:100%;padding:12px 16px 12px 42px;border:2px solid var(--border);border-radius:var(--rl);font-family:var(--font);font-size:14.5px;background:var(--white);outline:none;color:var(--text);transition:border-color .15s,box-shadow .15s}
+.sinput:focus{border-color:var(--navy);box-shadow:0 0 0 4px rgba(17,28,58,.05)}
+.sinput::placeholder{color:var(--muted)}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+.rcount{font-size:13.5px;color:var(--muted)}.rcount strong{color:var(--text);font-weight:600}
+.vtog{display:flex;background:var(--white);border:1px solid var(--border);border-radius:8px;padding:3px}
+.vtbtn{padding:5px 13px;border-radius:6px;border:none;background:none;cursor:pointer;font-family:var(--font);font-size:12.5px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:5px;transition:all .15s}
+.vtbtn.on{background:var(--navy);color:#fff}
+
+/* ── CARDS ── */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px}
+.pcard{background:var(--white);border-radius:var(--rx);border:1px solid var(--border);box-shadow:var(--sh0);overflow:hidden;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s;cursor:pointer}
+.pcard:hover{transform:translateY(-2px);box-shadow:var(--sh1)}
+.cimg{height:140px;background:var(--bg);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.cimg img{width:100%;height:100%;object-fit:cover}
+.cph{display:flex;flex-direction:column;align-items:center;gap:5px;opacity:.32;pointer-events:none}
+.cph .pico{font-size:44px}.cph .plbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.spill{position:absolute;top:10px;right:10px;background:rgba(17,28,58,.72);backdrop-filter:blur(6px);color:#fff;padding:2px 8px;border-radius:6px;font-size:10.5px;font-weight:600}
+.cbody{padding:14px;flex:1;display:flex;flex-direction:column;gap:7px}
+.cmeta{display:flex;align-items:center;justify-content:space-between}
+.ctag{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--pink);background:var(--pink-bg);padding:2px 8px;border-radius:6px}
+.cinum{font-size:11px;color:var(--muted)}
+.cname{font-size:14px;font-weight:600;line-height:1.35}
+.cspecs{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--muted)}
+.cbadges{display:flex;flex-wrap:wrap;gap:4px;min-height:22px}
+.cfoot{padding:11px 14px;border-top:1px solid var(--border);display:flex;gap:7px}
+
+/* ── BADGES ── */
+.badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+.bv{background:#DCFCE7;color:var(--cv)}.bo{background:#ECFCCB;color:var(--co)}
+.bk{background:#DBEAFE;color:var(--ck)}.bh{background:#EDE9FE;color:var(--ch)}
+.br{background:#FEF3C7;color:var(--cr)}.bf{background:#CFFAFE;color:var(--cf)}
+.bn{background:#F3E8FF;color:var(--cn)}.ba{background:#D1FAE5;color:var(--ca)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:8px;border:none;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-p{background:var(--navy);color:#fff;justify-content:center}.btn-p:hover{background:var(--navy2)}
+.cfoot .btn-p{flex:1} /* stretch "View Details" in card footer only */
+.btn-o{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-o:hover{background:var(--bg);color:var(--text)}
+.btn-d{background:transparent;color:#DC2626;border:1px solid #FEE2E2}.btn-d:hover{background:#FEF2F2}
+.btn-sm{padding:5px 10px;font-size:12px}
+.sbtn{padding:7px 13px;border-radius:8px;border:1px solid var(--border);background:var(--white);font-family:var(--font);font-size:12.5px;font-weight:500;cursor:pointer;color:var(--text);transition:background .12s}.sbtn:hover{background:var(--bg)}
+
+/* ── TABLE ── */
+.twrap{background:var(--white);border-radius:var(--rx);border:1px solid var(--border);overflow:hidden;overflow-x:auto}
+.ptbl{width:100%;border-collapse:collapse}
+.ptbl th{padding:11px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--border);white-space:nowrap}
+.ptbl td{padding:11px 14px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
+.ptbl tr:last-child td{border-bottom:none}
+.ptbl tbody tr:hover td{background:#fafbfe;cursor:pointer}
+.tname{font-weight:500;max-width:200px}
+.tcerts{display:flex;flex-wrap:wrap;gap:3px}
+.tacts{display:flex;gap:6px}
+
+/* ── EMPTY STATE ── */
+.empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:80px 24px;text-align:center}
+.eico{font-size:44px;opacity:.3}.etitle{font-size:17px;font-weight:600}.esub{font-size:13.5px;color:var(--muted);max-width:280px}
+
+/* ── LOADING ── */
+.loading{position:fixed;inset:0;background:rgba(247,249,252,.85);display:flex;align-items:center;justify-content:center;z-index:500;backdrop-filter:blur(3px)}
+.spin{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── OVERLAYS / MODALS ── */
+.ov{position:fixed;inset:0;background:rgba(17,28,58,.48);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px;backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .18s}
+.ov.open{opacity:1;pointer-events:all}
+.modal{background:var(--white);border-radius:var(--rx);box-shadow:var(--sh2);width:100%;max-width:540px;max-height:92vh;overflow-y:auto;transform:translateY(14px);transition:transform .22s}
+.ov.open .modal{transform:translateY(0)}
+.modal-lg{max-width:700px}.modal-sm{max-width:380px}
+.mhead{padding:22px 22px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.mtitle{font-size:19px;font-weight:700}.msub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.mclose{width:30px;height:30px;border-radius:7px;border:none;background:var(--bg);color:var(--muted);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .12s}.mclose:hover{background:var(--border)}
+.mbody{padding:18px 22px 22px}
+.mfoot{padding:0 22px 22px;display:flex;gap:9px;justify-content:flex-end}
+
+/* ── PIN ── */
+.pdots{display:flex;gap:12px;justify-content:center;margin:16px 0 6px}
+.pdot{width:13px;height:13px;border-radius:50%;background:var(--border);transition:background .12s}.pdot.on{background:var(--navy)}
+.perr{font-size:12.5px;color:#DC2626;text-align:center;min-height:18px;margin-bottom:10px}
+.ppad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;max-width:210px;margin:0 auto}
+.pkey{aspect-ratio:1;border-radius:var(--r);border:1px solid var(--border);background:var(--white);font-family:var(--font);font-size:19px;font-weight:500;cursor:pointer;transition:all .12s;display:flex;align-items:center;justify-content:center}
+.pkey:hover{background:var(--bg);border-color:var(--navy)}.pkey:active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* ── FORM ── */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fg{display:flex;flex-direction:column;gap:5px}.fg.full{grid-column:1/-1}
+.flbl{font-size:12.5px;font-weight:500}.flbl em{color:var(--muted);font-style:normal;font-weight:400}
+.finput,.fsel{padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;font-family:var(--font);font-size:13.5px;background:var(--white);color:var(--text);outline:none;transition:border-color .12s}
+.finput:focus,.fsel:focus{border-color:var(--navy)}
+.cchecks{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cchk{display:flex;align-items:center;gap:6px;cursor:pointer}
+.cchk input{width:14px;height:14px;accent-color:var(--pink);cursor:pointer}
+.cchk label{font-size:12.5px;cursor:pointer}
+
+/* ── DETAIL ── */
+.dimg{width:100%;height:190px;background:var(--bg);border-radius:var(--rl);display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:18px}
+.dimg img{width:100%;height:100%;object-fit:cover}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.dfield label{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);display:block;margin-bottom:3px}
+.dfield span{font-size:13.5px;color:var(--text);display:block}
+.dsec{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:18px 0 10px}
+.certgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.certcell{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:9px;background:var(--bg);font-size:10.5px;font-weight:500;color:var(--muted);border:1.5px solid transparent;text-align:center}
+.certcell.on{border-color:currentColor}
+.cico{font-size:18px}
+.linksrow{display:flex;flex-wrap:wrap;gap:9px}
+.dlink{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;border:1px solid var(--border);font-size:13px;color:var(--navy);text-decoration:none;font-weight:500;transition:background .12s}.dlink:hover{background:var(--bg)}
+.simgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:9px}
+.simcard{padding:11px;border-radius:var(--r);border:1px solid var(--border);cursor:pointer;background:var(--bg);transition:all .12s}.simcard:hover{border-color:var(--navy);background:#fff}
+.simname{font-size:12.5px;font-weight:500;margin-bottom:3px;line-height:1.3}.simmeta{font-size:11px;color:var(--muted)}
+
+/* ── UPLOAD ── */
+.utog{display:flex;gap:7px;margin-bottom:14px}
+.utbtn{padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--white);font-family:var(--font);font-size:13px;cursor:pointer;transition:all .12s}
+.utbtn.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.dz{border:2px dashed var(--border);border-radius:var(--rl);padding:36px 20px;text-align:center;cursor:pointer;transition:all .18s;background:var(--bg)}
+.dz:hover,.dz.over{border-color:var(--pink);background:var(--pink-bg)}
+.dz-ico{font-size:38px;margin-bottom:8px}.dz-h{font-size:14px;font-weight:600;margin-bottom:3px}.dz-s{font-size:12.5px;color:var(--muted)}
+.uprev{display:flex;align-items:center;gap:10px;margin-top:12px;padding:11px 14px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:var(--r);font-size:13px}
+
+/* ── CAT MANAGER ── */
+.catlist{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;max-height:280px;overflow-y:auto}
+.catitem{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--bg);border-radius:var(--r);font-size:13.5px}
+.catdel{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;transition:color .12s}.catdel:hover{color:#DC2626}
+.catadd{display:flex;gap:8px}
+
+/* ── MATCHER ── */
+.mwrap{max-width:860px;margin:0 auto}
+.mhero{margin-bottom:28px}
+.mhero h2{font-size:26px;font-weight:700;margin-bottom:6px}
+.mhero p{font-size:14.5px;color:var(--muted)}
+.mform{background:var(--white);border-radius:var(--rx);border:1px solid var(--border);padding:24px;margin-bottom:28px}
+.mfgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:20px}
+.chip{display:flex;align-items:center;gap:5px;padding:6px 13px;border-radius:99px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:13px;font-weight:500;transition:all .12s}
+.chip.on{border-color:var(--navy);background:#EEF0F8;color:var(--navy)}
+.srow{display:flex;gap:8px;align-items:center}
+.ssep{font-size:13px;color:var(--muted)}
+.shint{font-size:11px;color:var(--muted);margin-top:4px}
+.mres-title{font-size:15px;font-weight:600;margin-bottom:14px}
+.matchcard{background:var(--white);border-radius:var(--rx);border:1px solid var(--border);padding:18px;display:flex;gap:16px;align-items:flex-start;margin-bottom:11px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.matchcard:hover{border-color:var(--navy);box-shadow:var(--sh0)}
+.mring{width:62px;height:62px;flex-shrink:0;position:relative}
+.mring svg{transform:rotate(-90deg)}
+.mnum{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.mname{font-size:14.5px;font-weight:600;margin-bottom:3px}
+.mmeta{font-size:12.5px;color:var(--muted);margin-bottom:8px}
+.mtags{display:flex;flex-wrap:wrap;gap:6px}
+.mt{font-size:11px;padding:2px 8px;border-radius:5px;font-weight:500}
+.mt-y{background:#DCFCE7;color:#15803D}.mt-n{background:#FEE2E2;color:#DC2626}.mt-p{background:#FEF3C7;color:#B45309}
+
+/* ── TOAST ── */
+.toasts{position:fixed;bottom:22px;right:22px;z-index:600;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--text);color:#fff;padding:11px 15px;border-radius:9px;font-size:13px;font-weight:500;box-shadow:var(--sh1);max-width:300px;animation:tin .2s ease;display:flex;align-items:center;gap:7px}
+.t-ok{background:#15803D}.t-err{background:#DC2626}
+@keyframes tin{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:860px){.sidebar{display:none}.mfgrid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.main{padding:14px}.fgrid,.dgrid{grid-template-columns:1fr}.mfgrid{grid-template-columns:1fr}.cchecks,.certgrid{grid-template-columns:repeat(2,1fr)}.nbtn span{display:none}}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════
+  SETUP BANNER
+═══════════════════════════════════ -->
+<div class="banner hidden" id="banner">
+  ⚙️ <strong>JSONBin not configured.</strong> Open this file in a text editor, set your API Key and Bin ID in the CONFIG block at the top of the &lt;script&gt;. &nbsp;<a onclick="showSetupHelp()">View setup guide</a> — using local storage for now.
+</div>
+
+<!-- ═══════════════════════════════════
+  NAV
+═══════════════════════════════════ -->
+<nav class="nav">
+  <div class="brand"><div class="brand-dot"></div>OV Product Intelligence</div>
+  <div class="nav-tabs">
+    <button class="ntab on" onclick="switchView('products')">Products</button>
+    <button class="ntab" onclick="switchView('matcher')">Smart Matcher</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="nav-actions">
+    <button class="nbtn nb-ghost hidden" id="up-btn" onclick="openUploadModal()">
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+      <span>Upload Data</span>
+    </button>
+    <button class="nbtn nb-primary hidden" id="add-btn" onclick="openAddModal()">
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M12 4v16m8-8H4"/></svg>
+      <span>Add Product</span>
+    </button>
+    <button class="nbtn nb-admin" id="admin-btn" onclick="adminClick()">
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      <span id="admin-lbl">Admin</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════
+  APP
+═══════════════════════════════════ -->
+<div class="app" id="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-top">
+      <span class="sb-h">Filters</span>
+      <span class="sb-clr" onclick="clearFilters()">Clear all</span>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-sec-h">Category <span class="sb-mgr hidden" id="mgr-cat" onclick="openCatModal('category')">+ Manage</span></div>
+      <div class="chklist" id="fl-cat"></div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-sec-h">Production Site <span class="sb-mgr hidden" id="mgr-site" onclick="openCatModal('site')">+ Manage</span></div>
+      <div class="chklist" id="fl-site"></div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-sec-h">Certifications</div>
+      <div class="chklist" id="fl-cert"></div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-sec-h">Calibration (mm)</div>
+      <div class="sldr-vals"><span><strong id="clo">0</strong>mm</span><span><strong id="chi">20</strong>mm</span></div>
+      <div class="drange">
+        <div class="rtrack"></div>
+        <div class="rfill" id="rfill"></div>
+        <input type="range" id="ca" min="0" max="20" step="0.5" value="0"  oninput="calSlider()">
+        <input type="range" id="cb" min="0" max="20" step="0.5" value="20" oninput="calSlider()">
+      </div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-sec-h">BBD (Days)</div>
+      <div class="mini-row">
+        <div class="mini-g"><label>Min</label><input type="number" id="bmin" value="0"   oninput="applyFilters()"></div>
+        <div class="mini-g"><label>Max</label><input type="number" id="bmax" value="730" oninput="applyFilters()"></div>
+      </div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-sec-h">Weight (kg)</div>
+      <div class="mini-row">
+        <div class="mini-g"><label>Min</label><input type="number" id="wmin" value="0"   oninput="applyFilters()"></div>
+        <div class="mini-g"><label>Max</label><input type="number" id="wmax" value="100" oninput="applyFilters()"></div>
+      </div>
+    </div>
+    <div class="sb-admin hidden" id="admin-tools">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:10px;">Admin Tools</div>
+      <button class="sbtn" onclick="openCatModal('category')">Manage Categories</button>
+      <button class="sbtn" onclick="openCatModal('site')">Manage Sites</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- PRODUCTS VIEW -->
+    <div class="vsec on" id="v-products">
+      <div class="swrap">
+        <svg class="sico" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="sinput" id="sinput" type="text"
+          placeholder="Search by name, item #, category, size (e.g. 2-5mm), certification…"
+          oninput="handleSearch(this.value)">
+      </div>
+      <div class="toolbar">
+        <div class="rcount" id="rcount">Loading…</div>
+        <div class="vtog">
+          <button class="vtbtn on" id="vt-c" onclick="setView('card')">
+            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Cards
+          </button>
+          <button class="vtbtn" id="vt-t" onclick="setView('table')">
+            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>Table
+          </button>
+        </div>
+      </div>
+      <div id="cards" class="cgrid"></div>
+      <div id="tblwrap" class="twrap hidden">
+        <table class="ptbl">
+          <thead><tr><th>Item #</th><th>Name</th><th>Category</th><th>Site</th><th>Weight</th><th>BBD</th><th>Calibration</th><th>Certifications</th><th>Actions</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MATCHER VIEW -->
+    <div class="vsec" id="v-matcher">
+      <div class="mwrap">
+        <div class="mhero">
+          <h2>Smart Product Matcher</h2>
+          <p>Enter customer requirements to find best-fit products ranked by match score.</p>
+        </div>
+        <div class="mform">
+          <div class="mfgrid">
+            <div class="fg"><label class="flbl">Category</label><select class="fsel" id="m-cat"><option value="">All categories</option></select></div>
+            <div class="fg">
+              <label class="flbl">Target Size (mm)</label>
+              <div class="srow">
+                <input class="finput" type="number" id="m-smin" placeholder="Min" step="0.1" min="0" style="flex:1">
+                <span class="ssep">–</span>
+                <input class="finput" type="number" id="m-smax" placeholder="Max" step="0.1" min="0" style="flex:1">
+              </div>
+              <div class="shint">Leave Max empty for single-size search</div>
+            </div>
+            <div class="fg"><label class="flbl">Production Site</label><select class="fsel" id="m-site"><option value="">Any site</option></select></div>
+          </div>
+          <div style="font-size:12.5px;font-weight:500;margin-bottom:9px;">Required Certifications</div>
+          <div class="chips" id="m-chips"></div>
+          <button class="btn btn-p" style="flex:none;padding:11px 30px;font-size:14.5px;" onclick="runMatcher()">Find Matches →</button>
+        </div>
+        <div id="m-results"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- LOADING -->
+<div class="loading hidden" id="loading"><div class="spin"></div></div>
+<!-- TOASTS -->
+<div class="toasts" id="toasts"></div>
+
+<!-- ═══════════════════════════════════
+  MODAL: PIN
+═══════════════════════════════════ -->
+<div class="ov" id="ov-pin">
+  <div class="modal modal-sm">
+    <div class="mhead"><div><div class="mtitle">Admin Login</div><div class="msub">Enter your 4-digit PIN</div></div><button class="mclose" onclick="closeOv('ov-pin')">✕</button></div>
+    <div class="mbody" style="text-align:center">
+      <div class="pdots" id="pdots"><div class="pdot"></div><div class="pdot"></div><div class="pdot"></div><div class="pdot"></div></div>
+      <div class="perr" id="perr"></div>
+      <div class="ppad">
+        <button class="pkey" onclick="pp('1')">1</button><button class="pkey" onclick="pp('2')">2</button><button class="pkey" onclick="pp('3')">3</button>
+        <button class="pkey" onclick="pp('4')">4</button><button class="pkey" onclick="pp('5')">5</button><button class="pkey" onclick="pp('6')">6</button>
+        <button class="pkey" onclick="pp('7')">7</button><button class="pkey" onclick="pp('8')">8</button><button class="pkey" onclick="pp('9')">9</button>
+        <button class="pkey" style="font-size:13px" onclick="pinClr()">C</button>
+        <button class="pkey" onclick="pp('0')">0</button>
+        <button class="pkey" style="font-size:13px" onclick="pinBk()">⌫</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+  MODAL: PRODUCT DETAIL
+═══════════════════════════════════ -->
+<div class="ov" id="ov-detail">
+  <div class="modal modal-lg">
+    <div class="mhead">
+      <div><div class="mtitle" id="d-name"></div><div class="msub" id="d-sub"></div></div>
+      <button class="mclose" onclick="closeOv('ov-detail')">✕</button>
+    </div>
+    <div class="mbody" id="d-body"></div>
+    <div class="mfoot">
+      <button class="btn btn-o" onclick="closeOv('ov-detail')">Close</button>
+      <button class="btn btn-p admin-only hidden" style="flex:none" id="d-edit" onclick="editFromDetail()">Edit Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+  MODAL: ADD / EDIT PRODUCT
+═══════════════════════════════════ -->
+<div class="ov" id="ov-product">
+  <div class="modal modal-lg">
+    <div class="mhead"><div><div class="mtitle" id="pmod-title">Add Product</div><div class="msub">Fill in product details</div></div><button class="mclose" onclick="closeOv('ov-product')">✕</button></div>
+    <div class="mbody">
+      <div class="fgrid">
+        <div class="fg"><label class="flbl">Item Number</label><input class="finput" type="number" id="f-inum" placeholder="e.g. 2215"></div>
+        <div class="fg"><label class="flbl">Product Number <em>(optional)</em></label><input class="finput" type="text" id="f-pnum"></div>
+        <div class="fg full"><label class="flbl">Product Name</label><input class="finput" type="text" id="f-name" placeholder="e.g. Hazelnut Croquant 2.5-10.0mm"></div>
+        <div class="fg"><label class="flbl">Category</label><select class="fsel" id="f-cat"></select></div>
+        <div class="fg"><label class="flbl">Production Site</label><select class="fsel" id="f-site"></select></div>
+        <div class="fg"><label class="flbl">Weight (kg)</label><input class="finput" type="number" id="f-wt" step="0.001" placeholder="e.g. 25"></div>
+        <div class="fg"><label class="flbl">BBD (Days)</label><input class="finput" type="number" id="f-bbd" placeholder="e.g. 360"></div>
+        <div class="fg"><label class="flbl">Calibration Min (mm) <em>(optional)</em></label><input class="finput" type="number" id="f-cmin" step="0.01" placeholder="e.g. 1.5"></div>
+        <div class="fg"><label class="flbl">Calibration Max (mm) <em>(optional)</em></label><input class="finput" type="number" id="f-cmax" step="0.01" placeholder="e.g. 6.3"></div>
+        <div class="fg full"><label class="flbl">Spec Sheet URL <em>(optional)</em></label><input class="finput" type="url" id="f-spec" placeholder="https://…"></div>
+        <div class="fg full"><label class="flbl">Picture URL <em>(optional)</em></label><input class="finput" type="url" id="f-pic" placeholder="https://…"></div>
+        <div class="fg full">
+          <label class="flbl">Certifications</label>
+          <div class="cchecks">
+            <label class="cchk" for="fc-organic"><input type="checkbox" id="fc-organic"><span>Organic</span></label>
+            <label class="cchk" for="fc-vegan"><input type="checkbox" id="fc-vegan"><span>Vegan</span></label>
+            <label class="cchk" for="fc-kosher"><input type="checkbox" id="fc-kosher"><span>Kosher</span></label>
+            <label class="cchk" for="fc-halal"><input type="checkbox" id="fc-halal"><span>Halal</span></label>
+            <label class="cchk" for="fc-rspo"><input type="checkbox" id="fc-rspo"><span>RSPO</span></label>
+            <label class="cchk" for="fc-ft"><input type="checkbox" id="fc-ft"><span>Fair Trade</span></label>
+            <label class="cchk" for="fc-nop"><input type="checkbox" id="fc-nop"><span>NOP</span></label>
+            <label class="cchk" for="fc-ra"><input type="checkbox" id="fc-ra"><span>RA</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-o" onclick="closeOv('ov-product')">Cancel</button>
+      <button class="btn btn-p" style="flex:none" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+  MODAL: UPLOAD
+═══════════════════════════════════ -->
+<div class="ov" id="ov-upload">
+  <div class="modal">
+    <div class="mhead"><div><div class="mtitle">Upload Product Data</div><div class="msub">CSV, Excel (.xlsx), or JSON — columns auto-mapped</div></div><button class="mclose" onclick="closeOv('ov-upload')">✕</button></div>
+    <div class="mbody">
+      <div class="utog">
+        <button class="utbtn on" id="ut-rep" onclick="setUpMode('replace',this)">Replace All</button>
+        <button class="utbtn"    id="ut-mrg" onclick="setUpMode('merge',this)">Merge / Add New</button>
+      </div>
+      <div class="dz" id="dz" onclick="document.getElementById('fileinp').click()" ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)">
+        <div class="dz-ico">📂</div>
+        <div class="dz-h">Drop file here, or click to browse</div>
+        <div class="dz-s">Supports .csv · .xlsx · .json</div>
+      </div>
+      <input type="file" id="fileinp" accept=".csv,.xlsx,.xls,.json" style="display:none" onchange="fileSelect(event)">
+      <div id="uprev"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-o" onclick="closeOv('ov-upload')">Cancel</button>
+      <button class="btn btn-p" style="flex:none" id="up-ok" onclick="confirmUpload()" disabled>Import Data</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+  MODAL: CATEGORY / SITE MANAGER
+═══════════════════════════════════ -->
+<div class="ov" id="ov-cat">
+  <div class="modal" style="max-width:420px">
+    <div class="mhead"><div><div class="mtitle" id="cat-title">Manage Categories</div><div class="msub">Add or remove from the master list</div></div><button class="mclose" onclick="closeOv('ov-cat')">✕</button></div>
+    <div class="mbody">
+      <div class="catlist" id="catlist"></div>
+      <div class="catadd">
+        <input class="finput" type="text" id="catinp" placeholder="New item…" style="flex:1" onkeydown="if(event.key==='Enter')addCatItem()">
+        <button class="btn btn-p" style="flex:none" onclick="addCatItem()">Add</button>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-o" onclick="closeOv('ov-cat')">Cancel</button>
+      <button class="btn btn-p" style="flex:none" onclick="saveCatModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ════════════════════════════════════════════════════════════════
+  ┌──────────────────────────────────────────────────────────┐
+  │                 JSONBIN SETUP GUIDE                      │
+  │                                                          │
+  │  STEP 1 — Get your Master Key                            │
+  │  • Go to https://jsonbin.io and log in                   │
+  │  • Click your avatar → "API Keys"                        │
+  │  • Copy the "Master Key" (starts with $2b$...)           │
+  │  • Paste it as the value of API_KEY below                │
+  │                                                          │
+  │  STEP 2 — Get your Bin ID                                │
+  │  • On jsonbin.io, open your bin                          │
+  │  • Look at the URL bar:                                  │
+  │    https://api.jsonbin.io/v3/b/ ► COPY_THIS ◄            │
+  │  • Or click the bin title — the ID is shown on screen    │
+  │  • Paste it as the value of BIN_ID below                 │
+  │                                                          │
+  │  STEP 3 — (Optional) Change the admin PIN                │
+  │  • Default PIN is 1234                                   │
+  │                                                          │
+  │  STEP 4 — Save this file and open it in your browser     │
+  │  • All users who open the same file will share data      │
+  │  • Any admin upload/edit is live for everyone instantly  │
+  └──────────────────────────────────────────────────────────┘
+════════════════════════════════════════════════════════════════ */
+
+const CONFIG = {
+  API_KEY:   '$2a$10$1GlhWWVtzLmAgqtH62MY1Opf0Kz44LCzztSjb.2o/wiKS93siHjvq',   // ← paste Master Key here
+  BIN_ID:    '69d78e19aaba882197dd6d7a',        // ← paste Bin ID here
+  ADMIN_PIN: '1144',                    // ← change if desired
+};
+
+/* ────────────────────────────────────────
+  GLOBAL STATE
+──────────────────────────────────────── */
+const S = {
+  products:[],categories:[],sites:[],filtered:[],
+  isAdmin:false,viewMode:'card',search:'',
+  pinBuf:'',editId:null,detailId:null,
+  upMode:'replace',pending:null,
+  catType:'category',catTemp:[],
+};
+
+/* ────────────────────────────────────────
+  JSONBIN — DATA LAYER
+  All reads come from JSONBin on load.
+  All writes go to JSONBin immediately.
+  localStorage is kept as a silent backup.
+──────────────────────────────────────── */
+const configured = () =>
+  CONFIG.API_KEY !== 'YOUR_MASTER_KEY_HERE' &&
+  CONFIG.BIN_ID  !== 'YOUR_BIN_ID_HERE';
+
+const BIN_URL = () => `https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`;
+const GET_HEADERS = () => ({ 'X-Master-Key': CONFIG.API_KEY });
+const PUT_HEADERS = () => ({ 'X-Master-Key': CONFIG.API_KEY, 'Content-Type': 'application/json' });
+
+async function loadCloud() {
+  if (!configured()) { loadLocal(); showBanner(); return; }
+  try {
+    const r = await fetch(BIN_URL() + '/latest', { headers: GET_HEADERS() });
+    if (!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    hydrate(j.record);
+  } catch(e) {
+    console.error('Cloud load failed:', e);
+    toast('Could not reach JSONBin — using local data', 'err');
+    loadLocal();
+  }
+}
+
+async function saveCloud(silent=false) {
+  const data = dump();
+  localStorage.setItem('ov_data', JSON.stringify(data)); // local backup always
+  if (!configured()) return;
+  try {
+    const r = await fetch(BIN_URL(), {
+      method:'PUT', headers:PUT_HEADERS(), body:JSON.stringify(data)
+    });
+    if (!r.ok) throw new Error(r.status);
+    if (!silent) toast('Saved to cloud ✓','ok');
+  } catch(e) {
+    console.error('Cloud save failed:', e);
+    toast('Cloud save failed — saved locally','err');
+  }
+}
+
+function loadLocal() {
+  const raw = localStorage.getItem('ov_data');
+  if (raw) { try { hydrate(JSON.parse(raw)); return; } catch(e){} }
+  hydrate({ products:SAMPLE, categories:[], sites:[] });
+}
+
+/* hydrate() accepts either:
+   - a raw array (first-time JSONBin upload of the original JSON)
+   - our wrapped {products, categories, sites} object */
+function hydrate(data) {
+  const rawArr = Array.isArray(data) ? data : (data.products || []);
+  S.products   = rawArr.map(norm);
+  const dc = [...new Set(S.products.map(p=>p.category).filter(Boolean))].sort();
+  const ds = [...new Set(S.products.map(p=>p.site).filter(Boolean))].sort();
+  const sc = Array.isArray(data.categories) ? data.categories : [];
+  const ss = Array.isArray(data.sites)      ? data.sites      : [];
+  S.categories = [...new Set([...sc,...dc])].sort();
+  S.sites      = [...new Set([...ss,...ds])].sort();
+}
+
+const dump = () => ({ products:S.products, categories:S.categories, sites:S.sites });
+
+/* ────────────────────────────────────────
+  DATA NORMALIZATION
+  Converts any raw import shape into a
+  clean, typed product object.
+──────────────────────────────────────── */
+function norm(raw) {
+  // Trim all key names (raw export has " Weight (kg) " etc.)
+  const r = {};
+  Object.keys(raw).forEach(k => r[k.trim()] = raw[k]);
+
+  // Helpers
+  const num = v => {
+    if (v===null||v===undefined||v==='') return null;
+    const n = parseFloat(String(v).replace(/\s/g,'').replace(',','.'));
+    return isNaN(n) ? null : n;
+  };
+  const bool = v => typeof v==='boolean' ? v : String(v).trim().toLowerCase()==='yes';
+  const url  = v => { const s=String(v||'').trim(); return (!s||s.toLowerCase()==='link') ? null : s; };
+
+  // Stable ID: prefer Item Number, else generate once
+  const rawId = r.id ?? r['Item Number'] ?? r.itemNumber;
+  const id    = (rawId!==undefined && rawId!=='') ? String(rawId) : uid();
+
+  return {
+    id,
+    itemNumber:    num(r['Item Number']           ?? r.itemNumber),
+    productNumber: String(r['Product Number']     ?? r.productNumber ?? '').trim(),
+    name:          String(r['Name']               ?? r.name ?? '').trim(),
+    category:      String(r['Category']           ?? r.category ?? '').trim(),
+    site:          String(r['Site']               ?? r.site ?? '').trim() || 'ZUF',
+    weight:        num(r['Weight (kg)']           ?? r.weight),
+    bbd:           num(r['BBD (Days)']            ?? r.bbd),
+    calMin:        num(r['Calibration Min (mm)']  ?? r['Calibration Min'] ?? r.calMin),
+    calMax:        num(r['Calibration Max (mm)']  ?? r['Calibration Max'] ?? r.calMax),
+    organic: bool(r.Organic  ?? r.organic),
+    vegan:   bool(r.Vegan    ?? r.vegan),
+    rspo:    bool(r.RSPO     ?? r.rspo),
+    ft:      bool(r.FT       ?? r.ft),
+    nop:     bool(r.NOP      ?? r.nop),
+    ra:      bool(r.RA       ?? r.ra),
+    kosher:  bool(r.Kosher   ?? r.kosher),
+    halal:   bool(r.Halal    ?? r.halal),
+    spec:    url(r.Spec      ?? r.spec),
+    picture: url(r.Picture   ?? r.picture),
+  };
+}
+
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+/* ────────────────────────────────────────
+  AUTH — PIN MODAL
+──────────────────────────────────────── */
+function adminClick() {
+  if (S.isAdmin) { S.isAdmin=false; refreshAdminUI(); toast('Admin mode off'); }
+  else           { S.pinBuf=''; renderPinDots(); openOv('ov-pin'); }
+}
+
+function pp(d) {
+  if (S.pinBuf.length>=4) return;
+  S.pinBuf += d; renderPinDots();
+  if (S.pinBuf.length===4) setTimeout(checkPin,120);
+}
+function pinBk()  { S.pinBuf=S.pinBuf.slice(0,-1); renderPinDots(); ge('perr').textContent=''; }
+function pinClr() { S.pinBuf=''; renderPinDots(); ge('perr').textContent=''; }
+
+function checkPin() {
+  if (S.pinBuf===CONFIG.ADMIN_PIN) {
+    S.isAdmin=true; closeOv('ov-pin'); refreshAdminUI(); toast('Admin mode enabled ✓','ok');
+  } else {
+    ge('perr').textContent='Incorrect PIN — try again.'; S.pinBuf=''; renderPinDots();
+  }
+}
+
+function renderPinDots() {
+  document.querySelectorAll('.pdot').forEach((d,i)=>d.classList.toggle('on',i<S.pinBuf.length));
+}
+
+function refreshAdminUI() {
+  ge('admin-btn').classList.toggle('on',S.isAdmin);
+  ge('admin-lbl').textContent = S.isAdmin ? 'Admin On' : 'Admin';
+  ['add-btn','up-btn'].forEach(id=>ge(id).classList.toggle('hidden',!S.isAdmin));
+  ge('admin-tools').classList.toggle('hidden',!S.isAdmin);
+  ['mgr-cat','mgr-site'].forEach(id=>ge(id).classList.toggle('hidden',!S.isAdmin));
+  document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!S.isAdmin));
+  renderProducts();
+}
+
+/* ────────────────────────────────────────
+  FILTER & SEARCH ENGINE
+──────────────────────────────────────── */
+function handleSearch(v) { S.search=v.toLowerCase().trim(); applyFilters(); }
+
+function applyFilters() {
+  const q   = S.search;
+  const a   = +ge('ca').value, b = +ge('cb').value;
+  const clo = Math.min(a,b),   chi = Math.max(a,b);
+  const bMin= +ge('bmin').value||0, bMax=+ge('bmax').value||9999;
+  const wMin= +ge('wmin').value||0, wMax=+ge('wmax').value||9999;
+  const cats  = checked('fl-cat');
+  const sites = checked('fl-site');
+  const certs = checked('fl-cert');
+
+  S.filtered = S.products.filter(p => {
+    if (q) {
+      const t = [p.name,p.category,p.itemNumber,p.site,
+        p.calMin,p.calMax,
+        p.vegan?'vegan':'', p.organic?'organic':'',
+        p.kosher?'kosher':'', p.halal?'halal':'',
+        p.rspo?'rspo':'', p.ft?'ft fairtrade':'',
+        p.nop?'nop':'', p.ra?'ra rainforest':'',
+      ].join(' ').toLowerCase();
+      if (!t.includes(q)) return false;
+    }
+    if (cats.length  && !cats.includes(p.category))  return false;
+    if (sites.length && !sites.includes(p.site))     return false;
+    for (const c of certs) if (!p[c]) return false;
+    // Calibration: only restrict products that HAVE calibration data
+    if (p.calMin!==null && p.calMax!==null)
+      if (p.calMax<clo || p.calMin>chi) return false;
+    if (p.bbd!==null    && (p.bbd<bMin    || p.bbd>bMax))    return false;
+    if (p.weight!==null && (p.weight<wMin || p.weight>wMax)) return false;
+    return true;
+  });
+
+  renderProducts();
+}
+
+const checked = id =>
+  Array.from(ge(id).querySelectorAll('input:checked')).map(i=>i.value);
+
+function clearFilters() {
+  ['fl-cat','fl-site','fl-cert'].forEach(id=>
+    ge(id).querySelectorAll('input').forEach(i=>i.checked=false));
+  ge('ca').value='0'; ge('cb').value='20';
+  ge('bmin').value='0'; ge('bmax').value='730';
+  ge('wmin').value='0'; ge('wmax').value='100';
+  ge('sinput').value=''; S.search='';
+  syncCal(); applyFilters();
+}
+
+/* ────────────────────────────────────────
+  DUAL-RANGE CALIBRATION SLIDER
+──────────────────────────────────────── */
+function calSlider() { syncCal(); applyFilters(); }
+
+function syncCal() {
+  const a=+ge('ca').value, b=+ge('cb').value;
+  const lo=Math.min(a,b), hi=Math.max(a,b);
+  ge('clo').textContent=lo; ge('chi').textContent=hi;
+  const pct=100/20;
+  ge('rfill').style.left  = (lo*pct)+'%';
+  ge('rfill').style.width = ((hi-lo)*pct)+'%';
+}
+
+/* ────────────────────────────────────────
+  CERT / CATEGORY DEFINITIONS
+──────────────────────────────────────── */
+const CERTS = [
+  {k:'vegan',  l:'Vegan',      i:'🌿', cls:'bv', col:'--cv'},
+  {k:'organic',l:'Organic',    i:'🌱', cls:'bo', col:'--co'},
+  {k:'kosher', l:'Kosher',     i:'✡️', cls:'bk', col:'--ck'},
+  {k:'halal',  l:'Halal',      i:'☪️', cls:'bh', col:'--ch'},
+  {k:'rspo',   l:'RSPO',       i:'🌴', cls:'br', col:'--cr'},
+  {k:'ft',     l:'Fair Trade', i:'🤝', cls:'bf', col:'--cf'},
+  {k:'nop',    l:'NOP',        i:'🇺🇸', cls:'bn', col:'--cn'},
+  {k:'ra',     l:'RA',         i:'🐸', cls:'ba', col:'--ca'},
+];
+
+const CAT_ICO = { paste:'🫙', croquant:'🍫', nougat:'🍬', dragée:'🍩', dragee:'🍩' };
+const catIco  = c => CAT_ICO[(c||'').toLowerCase()] || '📦';
+
+const primaryBadges = p =>
+  CERTS.slice(0,4).filter(c=>p[c.k]).map(c=>`<span class="badge ${c.cls}">${c.i} ${c.l}</span>`).join('');
+const allBadges = p =>
+  CERTS.filter(c=>p[c.k]).map(c=>`<span class="badge ${c.cls}">${c.i} ${c.l}</span>`).join('');
+
+/* ────────────────────────────────────────
+  RENDER SIDEBAR FILTERS
+──────────────────────────────────────── */
+function renderSidebar() {
+  const cc={},sc={},vc={};
+  S.products.forEach(p=>{
+    cc[p.category]=(cc[p.category]||0)+1;
+    sc[p.site]=(sc[p.site]||0)+1;
+    CERTS.forEach(c=>{ if(p[c.k]) vc[c.k]=(vc[c.k]||0)+1; });
+  });
+
+  ge('fl-cat').innerHTML = S.categories.map(c=>
+    `<label class="chkrow"><input type="checkbox" value="${x(c)}" onchange="applyFilters()">
+     <span class="chklbl">${x(c)}</span><span class="chkct">${cc[c]||0}</span></label>`).join('');
+
+  ge('fl-site').innerHTML = S.sites.map(s=>
+    `<label class="chkrow"><input type="checkbox" value="${x(s)}" onchange="applyFilters()">
+     <span class="chklbl">${x(s)}</span><span class="chkct">${sc[s]||0}</span></label>`).join('');
+
+  ge('fl-cert').innerHTML = CERTS.map(c=>
+    `<label class="chkrow"><input type="checkbox" value="${c.k}" onchange="applyFilters()">
+     <span class="chklbl">${c.i} ${c.l}</span><span class="chkct">${vc[c.k]||0}</span></label>`).join('');
+
+  // Matcher dropdowns
+  ge('m-cat').innerHTML  = `<option value="">All categories</option>` +
+    S.categories.map(c=>`<option value="${x(c)}">${x(c)}</option>`).join('');
+  ge('m-site').innerHTML = `<option value="">Any site</option>` +
+    S.sites.map(s=>`<option value="${x(s)}">${x(s)}</option>`).join('');
+
+  ge('m-chips').innerHTML = CERTS.map(c=>
+    `<div class="chip" data-cert="${c.k}" onclick="this.classList.toggle('on')">${c.i} ${c.l}</div>`).join('');
+
+  // Product form dropdowns
+  ge('f-cat').innerHTML  = S.categories.map(c=>`<option value="${x(c)}">${x(c)}</option>`).join('');
+  ge('f-site').innerHTML = S.sites.map(s=>`<option value="${x(s)}">${x(s)}</option>`).join('');
+}
+
+/* ────────────────────────────────────────
+  RENDER PRODUCTS (CARDS + TABLE)
+──────────────────────────────────────── */
+function imgTag(p, h=140) {
+  if (!p.picture) return `<div class="cph"><span class="pico">${catIco(p.category)}</span><span class="plbl">${x(p.category)}</span></div>`;
+  // Use data-pid so the onerror handler can look up the product safely (avoids quote-escaping issues)
+  return `<img src="${x(p.picture)}" alt="${x(p.name)}" data-pid="${x(p.id)}"
+    style="width:100%;height:${h}px;object-fit:cover" onerror="imgFallback(this)">`;
+}
+
+// Called when a product image URL fails to load — replaces img with category placeholder
+function imgFallback(img) {
+  const pid = img.getAttribute('data-pid');
+  const p   = S.products.find(q => q.id === pid);
+  img.parentElement.innerHTML = p
+    ? `<div class="cph"><span class="pico">${catIco(p.category)}</span><span class="plbl">${x(p.category)}</span></div>`
+    : '';
+}
+
+function renderCard(p) {
+  const admin = S.isAdmin
+    ? `<button class="btn btn-o btn-sm" onclick="event.stopPropagation();openEditModal('${p.id}')">Edit</button>
+       <button class="btn btn-d btn-sm" onclick="event.stopPropagation();delProduct('${p.id}')">Delete</button>` : '';
+  return `
+  <div class="pcard" onclick="openDetail('${p.id}')">
+    <div class="cimg">
+      ${imgTag(p)}
+      <div class="spill">${x(p.site)}</div>
+    </div>
+    <div class="cbody">
+      <div class="cmeta"><span class="ctag">${x(p.category)}</span><span class="cinum">#${p.itemNumber??'—'}</span></div>
+      <div class="cname">${x(p.name)}</div>
+      <div class="cspecs">
+        ${p.weight!==null?`<span>⚖️ ${p.weight}kg</span>`:''}
+        ${p.calMin!==null?`<span>📏 ${p.calMin}–${p.calMax}mm</span>`:''}
+        ${p.bbd!==null?`<span>📅 ${p.bbd}d</span>`:''}
+      </div>
+      <div class="cbadges">${primaryBadges(p)}</div>
+    </div>
+    <div class="cfoot">
+      <button class="btn btn-p btn-sm" onclick="event.stopPropagation();openDetail('${p.id}')">View Details</button>
+      ${admin}
+    </div>
+  </div>`;
+}
+
+function renderRow(p) {
+  const admin = S.isAdmin
+    ? `<button class="btn btn-o btn-sm" onclick="event.stopPropagation();openEditModal('${p.id}')">Edit</button>
+       <button class="btn btn-d btn-sm" onclick="event.stopPropagation();delProduct('${p.id}')">Delete</button>` : '';
+  return `
+  <tr onclick="openDetail('${p.id}')">
+    <td>${p.itemNumber??'—'}</td>
+    <td class="tname">${x(p.name)}</td>
+    <td><span class="ctag">${x(p.category)}</span></td>
+    <td>${x(p.site)}</td>
+    <td>${p.weight!==null?p.weight+' kg':'—'}</td>
+    <td>${p.bbd!==null?p.bbd+' d':'—'}</td>
+    <td>${p.calMin!==null?`${p.calMin}–${p.calMax}mm`:'—'}</td>
+    <td><div class="tcerts">${allBadges(p)||'<span style="color:var(--muted);font-size:11px">—</span>'}</div></td>
+    <td onclick="event.stopPropagation()"><div class="tacts">
+      <button class="btn btn-o btn-sm" onclick="openDetail('${p.id}')">View</button>
+      ${admin}
+    </div></td>
+  </tr>`;
+}
+
+function renderProducts() {
+  const n = S.filtered.length;
+  ge('rcount').innerHTML = `Showing <strong>${n}</strong> of <strong>${S.products.length}</strong> products`;
+
+  if (S.viewMode==='card') {
+    ge('cards').innerHTML = n===0 ? emptyState('🔍','No products found','Try adjusting your search or filters') :
+      S.filtered.map(renderCard).join('');
+  } else {
+    ge('tbody').innerHTML = n===0
+      ? `<tr><td colspan="9" style="text-align:center;padding:60px;color:var(--muted)">No products found</td></tr>`
+      : S.filtered.map(renderRow).join('');
+  }
+}
+
+function setView(m) {
+  S.viewMode=m;
+  ge('cards').classList.toggle('hidden',m!=='card');
+  ge('tblwrap').classList.toggle('hidden',m!=='table');
+  ge('vt-c').classList.toggle('on',m==='card');
+  ge('vt-t').classList.toggle('on',m==='table');
+  renderProducts();
+}
+
+const emptyState = (ico,t,s) =>
+  `<div class="empty" style="grid-column:1/-1"><div class="eico">${ico}</div><div class="etitle">${t}</div><div class="esub">${s}</div></div>`;
+
+/* ────────────────────────────────────────
+  PRODUCT DETAIL MODAL
+──────────────────────────────────────── */
+function findSimilar(prod, n=3) {
+  return S.products.filter(q=>q.id!==prod.id).map(q => {
+    let s=0;
+    if (q.category===prod.category) s+=50;
+    if (prod.calMin!==null && q.calMin!==null)
+      if (Math.min(prod.calMax,q.calMax)>Math.max(prod.calMin,q.calMin)) s+=30;
+    CERTS.forEach(c=>{ if(prod[c.k]&&q[c.k]) s+=5; });
+    return {p:q,s};
+  }).filter(r=>r.s>20).sort((a,b)=>b.s-a.s).slice(0,n).map(r=>r.p);
+}
+
+function openDetail(id) {
+  const p = S.products.find(q=>q.id===String(id));
+  if (!p) return;
+  S.detailId = id;
+
+  ge('d-name').textContent = p.name;
+  ge('d-sub').textContent  = `Item #${p.itemNumber??'—'} · ${p.category} · ${p.site}`;
+
+  const similar = findSimilar(p);
+  const simHtml = similar.length===0
+    ? `<p style="color:var(--muted);font-size:13px">No similar products found.</p>`
+    : `<div class="simgrid">${similar.map(sim=>
+        `<div class="simcard" onclick="closeOv('ov-detail');openDetail('${sim.id}')">
+           <div class="simname">${x(sim.name)}</div>
+           <div class="simmeta">${x(sim.category)}${sim.calMin!==null?` · ${sim.calMin}–${sim.calMax}mm`:''}</div>
+           <div style="margin-top:5px">${primaryBadges(sim)}</div>
+         </div>`).join('')}</div>`;
+
+  ge('d-body').innerHTML = `
+    <div class="dimg">${imgTag(p,190)}</div>
+    <div class="dgrid">
+      <div class="dfield"><label>Item Number</label><span>${p.itemNumber??'—'}</span></div>
+      <div class="dfield"><label>Product Number</label><span>${p.productNumber||'—'}</span></div>
+      <div class="dfield"><label>Category</label><span>${x(p.category)}</span></div>
+      <div class="dfield"><label>Site</label><span>${x(p.site)}</span></div>
+      <div class="dfield"><label>Weight</label><span>${p.weight!==null?p.weight+' kg':'—'}</span></div>
+      <div class="dfield"><label>BBD</label><span>${p.bbd!==null?p.bbd+' days':'—'}</span></div>
+      <div class="dfield"><label>Calibration Min</label><span>${p.calMin!==null?p.calMin+' mm':'—'}</span></div>
+      <div class="dfield"><label>Calibration Max</label><span>${p.calMax!==null?p.calMax+' mm':'—'}</span></div>
+    </div>
+    <div class="dsec">Certifications</div>
+    <div class="certgrid">
+      ${CERTS.map(c=>`
+        <div class="certcell ${p[c.k]?'on':''}" style="${p[c.k]?`color:var(${c.col})`:''}">
+          <span class="cico">${c.i}</span>${c.l}
+        </div>`).join('')}
+    </div>
+    ${(p.spec||p.picture)?`
+    <div class="dsec">Links</div>
+    <div class="linksrow">
+      ${p.spec?   `<a href="${x(p.spec)}"    target="_blank" class="dlink">📄 Spec Sheet</a>`:''}
+      ${p.picture?`<a href="${x(p.picture)}" target="_blank" class="dlink">🖼️ Product Image</a>`:''}
+    </div>`:''}
+    <div class="dsec">Similar Products</div>
+    ${simHtml}
+  `;
+
+  ge('d-edit').classList.toggle('hidden',!S.isAdmin);
+  openOv('ov-detail');
+}
+
+function editFromDetail() { closeOv('ov-detail'); openEditModal(S.detailId); }
+
+/* ────────────────────────────────────────
+  CRUD — CREATE / UPDATE / DELETE
+──────────────────────────────────────── */
+function openAddModal() {
+  if (!S.isAdmin) { toast('Admin access required','err'); return; }
+  S.editId=null;
+  ge('pmod-title').textContent='Add Product';
+  clearForm();
+  if (S.sites.length)      ge('f-site').value=S.sites[0];
+  if (S.categories.length) ge('f-cat').value=S.categories[0];
+  openOv('ov-product');
+}
+
+function openEditModal(id) {
+  if (!S.isAdmin) { toast('Admin access required','err'); return; }
+  const p = S.products.find(q=>q.id===String(id));
+  if (!p) return;
+  S.editId=id;
+  ge('pmod-title').textContent='Edit Product';
+  fillForm(p);
+  openOv('ov-product');
+}
+
+function fillForm(p) {
+  ge('f-inum').value=p.itemNumber??''; ge('f-pnum').value=p.productNumber??'';
+  ge('f-name').value=p.name??'';      ge('f-cat').value=p.category??'';
+  ge('f-site').value=p.site??'';      ge('f-wt').value=p.weight??'';
+  ge('f-bbd').value=p.bbd??'';        ge('f-cmin').value=p.calMin??'';
+  ge('f-cmax').value=p.calMax??'';    ge('f-spec').value=p.spec??'';
+  ge('f-pic').value=p.picture??'';
+  ['organic','vegan','kosher','halal','rspo','ft','nop','ra'].forEach(c=>
+    ge('fc-'+c).checked=!!p[c]);
+}
+
+function clearForm() {
+  ['f-inum','f-pnum','f-name','f-wt','f-bbd','f-cmin','f-cmax','f-spec','f-pic']
+    .forEach(id=>ge(id).value='');
+  ['organic','vegan','kosher','halal','rspo','ft','nop','ra']
+    .forEach(c=>ge('fc-'+c).checked=false);
+}
+
+async function saveProduct() {
+  const name = ge('f-name').value.trim();
+  if (!name) { toast('Product name is required','err'); return; }
+
+  const p = {
+    itemNumber:    parseFloat(ge('f-inum').value)||null,
+    productNumber: ge('f-pnum').value.trim(),
+    name,
+    category: ge('f-cat').value,
+    site:     ge('f-site').value,
+    weight:   parseFloat(ge('f-wt').value)||null,
+    bbd:      parseInt(ge('f-bbd').value)||null,
+    calMin:   parseFloat(ge('f-cmin').value)||null,
+    calMax:   parseFloat(ge('f-cmax').value)||null,
+    spec:     ge('f-spec').value.trim()||null,
+    picture:  ge('f-pic').value.trim()||null,
+  };
+  ['organic','vegan','kosher','halal','rspo','ft','nop','ra'].forEach(c=>p[c]=ge('fc-'+c).checked);
+
+  showLoad();
+  if (S.editId) {
+    const i = S.products.findIndex(q=>q.id===String(S.editId));
+    if (i>=0) S.products[i]={...S.products[i],...p};
+    toast('Product updated','ok');
+  } else {
+    p.id=uid();
+    S.products.push(p);
+    if (p.category && !S.categories.includes(p.category)) S.categories.push(p.category);
+    if (p.site     && !S.sites.includes(p.site))          S.sites.push(p.site);
+    toast('Product added','ok');
+  }
+
+  await saveCloud(true);
+  hideLoad();
+  closeOv('ov-product');
+  renderSidebar();
+  applyFilters();
+}
+
+async function delProduct(id) {
+  if (!S.isAdmin) { toast('Admin access required','err'); return; }
+  if (!confirm('Delete this product? This action cannot be undone.')) return;
+  S.products = S.products.filter(p=>p.id!==String(id));
+  showLoad();
+  await saveCloud(true);
+  hideLoad();
+  toast('Product deleted','ok');
+  applyFilters();
+}
+
+/* ────────────────────────────────────────
+  FILE UPLOAD
+──────────────────────────────────────── */
+function openUploadModal() {
+  if (!S.isAdmin) { toast('Admin access required','err'); return; }
+  S.pending=null;
+  ge('uprev').innerHTML='';
+  ge('up-ok').disabled=true;
+  openOv('ov-upload');
+}
+
+function setUpMode(m,btn) {
+  S.upMode=m;
+  document.querySelectorAll('.utbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+function dzOver(e) { e.preventDefault(); ge('dz').classList.add('over'); }
+function dzLeave()  { ge('dz').classList.remove('over'); }
+function dzDrop(e)  { e.preventDefault(); dzLeave(); const f=e.dataTransfer.files[0]; if(f) processFile(f); }
+function fileSelect(e) { const f=e.target.files[0]; if(f) processFile(f); e.target.value=''; }
+
+function processFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  const rd  = new FileReader();
+  rd.onload = e => {
+    try {
+      let rows=[];
+      if      (ext==='json')            rows = JSON.parse(e.target.result);
+      else if (ext==='csv')             rows = Papa.parse(e.target.result,{header:true,skipEmptyLines:true}).data;
+      else if (ext==='xlsx'||ext==='xls') {
+        const wb = XLSX.read(e.target.result,{type:'array'});
+        rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+      } else { toast('Unsupported file type','err'); return; }
+
+      if (!Array.isArray(rows)||!rows.length) { toast('No valid rows found','err'); return; }
+
+      S.pending = rows.map(norm);
+      ge('uprev').innerHTML =
+        `<div class="uprev">✅ <div><strong>${file.name}</strong><br>
+         <span style="color:var(--muted);font-size:12px">${S.pending.length} products ready to import</span></div></div>`;
+      ge('up-ok').disabled=false;
+    } catch(err) { console.error(err); toast('Failed to parse: '+err.message,'err'); }
+  };
+  (ext==='xlsx'||ext==='xls') ? rd.readAsArrayBuffer(file) : rd.readAsText(file);
+}
+
+async function confirmUpload() {
+  if (!S.pending) return;
+  showLoad();
+  if (S.upMode==='replace') {
+    S.products = S.pending;
+  } else {
+    const existing = new Set(S.products.map(p=>String(p.itemNumber)));
+    const added    = S.pending.filter(p=>!existing.has(String(p.itemNumber)));
+    S.products = [...S.products, ...added];
+    toast(`Merged: ${added.length} new products added`,'ok');
+  }
+  // Rebuild category/site lists from data
+  const dc=[...new Set(S.products.map(p=>p.category).filter(Boolean))].sort();
+  const ds=[...new Set(S.products.map(p=>p.site).filter(Boolean))].sort();
+  S.categories=[...new Set([...S.categories,...dc])].sort();
+  S.sites     =[...new Set([...S.sites,...ds])].sort();
+
+  await saveCloud();
+  hideLoad();
+  closeOv('ov-upload');
+  renderSidebar();
+  applyFilters();
+  if (S.upMode==='replace') toast(`Imported ${S.products.length} products ✓`,'ok');
+}
+
+/* ────────────────────────────────────────
+  CATEGORY / SITE MANAGER
+──────────────────────────────────────── */
+function openCatModal(type) {
+  S.catType=type;
+  S.catTemp=[...(type==='category'?S.categories:S.sites)];
+  ge('cat-title').textContent = type==='category' ? 'Manage Categories' : 'Manage Production Sites';
+  ge('catinp').value='';
+  renderCatList();
+  openOv('ov-cat');
+}
+
+function renderCatList() {
+  ge('catlist').innerHTML = S.catTemp.map((item,i)=>
+    `<div class="catitem"><span>${x(item)}</span>
+     <button class="catdel" onclick="rmCat(${i})">✕</button></div>`).join('');
+}
+
+function rmCat(i) { S.catTemp.splice(i,1); renderCatList(); }
+
+function addCatItem() {
+  const v=ge('catinp').value.trim();
+  if (!v) return;
+  if (!S.catTemp.includes(v)) { S.catTemp.push(v); S.catTemp.sort(); }
+  ge('catinp').value='';
+  renderCatList();
+}
+
+async function saveCatModal() {
+  if (S.catType==='category') S.categories=[...S.catTemp];
+  else                        S.sites=[...S.catTemp];
+  showLoad();
+  await saveCloud(true);
+  hideLoad();
+  closeOv('ov-cat');
+  renderSidebar();
+  toast('Changes saved ✓','ok');
+}
+
+/* ────────────────────────────────────────
+  SMART MATCHER
+  Scoring (max 100 pts):
+    Category   → 40 pts (exact match)
+    Calibration→ 35 pts (target size within product range = full;
+                          outside = degrades by distance × 7)
+    Certs      → 25 pts (split equally across required certs)
+──────────────────────────────────────── */
+function runMatcher() {
+  const cat    = ge('m-cat').value;
+  const smin   = parseFloat(ge('m-smin').value);
+  const smax   = parseFloat(ge('m-smax').value);
+  const site   = ge('m-site').value;
+  const reqCerts = Array.from(ge('m-chips').querySelectorAll('.chip.on')).map(c=>c.dataset.cert);
+
+  if (!cat && isNaN(smin) && reqCerts.length===0)
+    { toast('Enter at least one requirement','err'); return; }
+
+  const results = S.products
+    .map(p => ({ p, sc: score(p,{cat,smin,smax,site,reqCerts}) }))
+    .filter(r => r.sc.total>0)
+    .sort((a,b)=>b.sc.total-a.sc.total)
+    .slice(0,10);
+
+  renderMatcherResults(results, {cat,smin,smax,reqCerts});
+}
+
+function score(p, c) {
+  let total=0;
+  const tags=[];
+
+  /* Category — 40 pts */
+  if (c.cat) {
+    if (p.category===c.cat) { total+=40; tags.push({l:'Category match',t:'y'}); }
+    else                    {            tags.push({l:'Category mismatch',t:'n'}); }
+  }
+
+  /* Calibration — 35 pts
+     Logic: customer specifies the exact size they need.
+     If that size falls within the product's manufacturing range → full points.
+     Outside the range → score degrades by distance. */
+  const hasSize = !isNaN(c.smin);
+  if (hasSize && p.calMin!==null) {
+    const tMin = c.smin;
+    const tMax = (!isNaN(c.smax) && c.smax>c.smin) ? c.smax : c.smin;
+    if (p.calMin<=tMin && p.calMax>=tMax) {
+      total+=35; tags.push({l:'Size match',t:'y'});
+    } else {
+      const d = Math.max(0,tMin-p.calMax) + Math.max(0,p.calMin-tMax);
+      const pts = Math.max(0, 35 - d*7);
+      total+=pts;
+      tags.push(pts>15?{l:`Size near range (+${Math.round(pts)}pt)`,t:'p'}:{l:'Size out of range',t:'n'});
+    }
+  } else if (hasSize && p.calMin===null) {
+    total+=17; // neutral — product has no calibration data
+    tags.push({l:'No size data',t:'p'});
+  }
+
+  /* Certifications — 25 pts split equally */
+  if (c.reqCerts && c.reqCerts.length) {
+    const each=25/c.reqCerts.length;
+    c.reqCerts.forEach(k=>{
+      if (p[k]) { total+=each; tags.push({l:CERTS.find(c=>c.k===k)?.l||k,t:'y'}); }
+      else      {              tags.push({l:(CERTS.find(c=>c.k===k)?.l||k)+' missing',t:'n'}); }
+    });
+  }
+
+  /* Site filter: hard exclusion (not scored) */
+  if (c.site && p.site!==c.site) return {total:0,tags:[{l:'Site mismatch',t:'n'}]};
+
+  // If no scoring criteria were specified at all (e.g. site-only search),
+  // give every passing product a baseline score so they appear in results
+  if (!c.cat && !hasSize && (!c.reqCerts||!c.reqCerts.length)) {
+    total = 50;
+    tags.push({l:'Site match',t:'y'});
+  }
+
+  return {total:Math.round(Math.min(total,100)), tags};
+}
+
+function renderMatcherResults(results) {
+  const el=ge('m-results');
+  if (!results.length) {
+    el.innerHTML=`<div class="empty"><div class="eico">🔍</div><div class="etitle">No matches found</div><div class="esub">Try adjusting your requirements</div></div>`;
+    return;
+  }
+  const C=2*Math.PI*25; // circumference r=25
+  el.innerHTML = `<div class="mres-title">Found ${results.length} matching product${results.length!==1?'s':''}</div>` +
+  results.map(({p,sc})=>{
+    const pct=sc.total, col=pct>=75?'#16A34A':pct>=50?'#D97706':'#DC2626';
+    const dash=`${(pct/100)*C} ${C}`;
+    return `
+    <div class="matchcard" onclick="openDetail('${p.id}')">
+      <div class="mring">
+        <svg width="62" height="62" viewBox="0 0 62 62">
+          <circle cx="31" cy="31" r="25" fill="none" stroke="var(--border)" stroke-width="5"/>
+          <circle cx="31" cy="31" r="25" fill="none" stroke="${col}" stroke-width="5"
+            stroke-dasharray="${dash}" stroke-linecap="round"/>
+        </svg>
+        <div class="mnum"><span style="font-size:13px;font-weight:700;color:${col}">${pct}%</span></div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="mname">${x(p.name)}</div>
+        <div class="mmeta">${x(p.category)} · #${p.itemNumber??'—'} · ${x(p.site)}${p.calMin!==null?` · ${p.calMin}–${p.calMax}mm`:''}</div>
+        <div class="mtags">${sc.tags.map(t=>`<span class="mt mt-${t.t}">${t.l}</span>`).join('')}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ────────────────────────────────────────
+  NAVIGATION
+──────────────────────────────────────── */
+function switchView(v) {
+  document.querySelectorAll('.vsec').forEach(el=>el.classList.remove('on'));
+  ge('v-'+v).classList.add('on');
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
+  document.querySelector(`.ntab[onclick="switchView('${v}')"]`).classList.add('on');
+  ge('sidebar').style.display = v==='products' ? '' : 'none';
+}
+
+/* ────────────────────────────────────────
+  OVERLAY (MODAL) HELPERS
+──────────────────────────────────────── */
+function openOv(id)  { ge(id).classList.add('open');  document.body.style.overflow='hidden'; }
+function closeOv(id) { ge(id).classList.remove('open'); document.body.style.overflow=''; }
+
+document.querySelectorAll('.ov').forEach(ov=>
+  ov.addEventListener('click', e=>{ if(e.target===ov) closeOv(ov.id); }));
+
+/* ────────────────────────────────────────
+  LOADING & TOASTS
+──────────────────────────────────────── */
+function showLoad() { ge('loading').classList.remove('hidden'); }
+function hideLoad() { ge('loading').classList.add('hidden'); }
+
+function toast(msg, type='') {
+  const el=document.createElement('div');
+  el.className=`toast${type==='ok'?' t-ok':type==='err'?' t-err':''}`;
+  el.innerHTML=(type==='ok'?'✓':type==='err'?'✕':'ℹ')+' '+msg;
+  ge('toasts').appendChild(el);
+  setTimeout(()=>el.remove(), 3500);
+}
+
+function showBanner() {
+  ge('banner').classList.remove('hidden');
+  ge('app').classList.add('shifted');
+  ge('sidebar').classList.add('shifted');
+}
+
+function showSetupHelp() {
+  alert(
+    'JSONBin Setup Guide\n\n' +
+    'STEP 1 — Get your Master Key\n' +
+    '• Go to https://jsonbin.io and log in\n' +
+    '• Click your avatar (top right) → "API Keys"\n' +
+    '• Copy the "Master Key" (long string starting with $2b$...)\n\n' +
+    'STEP 2 — Get your Bin ID\n' +
+    '• On jsonbin.io, click on your bin\n' +
+    '• Look at the browser URL bar:\n' +
+    '  https://api.jsonbin.io/v3/b/ ► COPY_THIS_PART ◄\n' +
+    '• Or look for the Bin ID shown on the bin page\n\n' +
+    'STEP 3 — Paste into this file\n' +
+    '• Open this .html file in a text editor (VS Code, Notepad, etc.)\n' +
+    '• Find the CONFIG block near the top of the <script>\n' +
+    '• Replace YOUR_MASTER_KEY_HERE with your Master Key\n' +
+    '• Replace YOUR_BIN_ID_HERE with your Bin ID\n' +
+    '• Save the file and reload it in your browser\n\n' +
+    'That\'s it! All users who open this file will share the same live data.'
+  );
+}
+
+/* ────────────────────────────────────────
+  UTILITY HELPERS
+──────────────────────────────────────── */
+const ge  = id => document.getElementById(id);
+const x   = s  => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+/* ────────────────────────────────────────
+  SAMPLE DATA  (used on first run / no storage)
+──────────────────────────────────────── */
+const SAMPLE = [
+  {"id":"2215","Site":"ZUF","Item Number":"2215","Name":"Almond Paste","Category":"Paste"," Weight (kg) ":" 20.000 ","BBD (Days)":"360"," Calibration Min (mm) ":""," Calibration Max (mm) ":"","Organic":"Yes","Vegan":"Yes","RSPO":"No","FT":"No","NOP":"No","RA":"No","Kosher":"No","Halal":"No","Spec":"https://www.kasparag.ch/fileadmin/redaktion/produkte/Entwicklung/Spec_2215_Almond_Paste.pdf","Picture":"https://www.kasparag.ch/fileadmin/_processed_/0/6/csm_Almond_Paste_100__0043_klein_377a182498.jpg"},
+  {"id":"2262","Site":"ZUF","Item Number":"2262","Name":"Croquant Toasted Corn K 1.0-3.0mm","Category":"Croquant"," Weight (kg) ":" 15.000 ","BBD (Days)":"360"," Calibration Min (mm) ":"1,00"," Calibration Max (mm) ":"3,00","Organic":"No","Vegan":"Yes","RSPO":"No","FT":"No","NOP":"No","RA":"No","Kosher":"Yes","Halal":"No","Spec":"","Picture":""},
+  {"id":"2281","Site":"ZUF","Item Number":"2281","Name":"Rice Crisp Salty Roasted 4.0-8.0mm","Category":"Croquant"," Weight (kg) ":" 12.000 ","BBD (Days)":"405"," Calibration Min (mm) ":"4,00"," Calibration Max (mm) ":"8,00","Organic":"No","Vegan":"Yes","RSPO":"No","FT":"No","NOP":"No","RA":"No","Kosher":"Yes","Halal":"No","Spec":"https://www.kasparag.ch/fileadmin/redaktion/produkte/Entwicklung/Spec_2281_Rice_Crisp_Salty_Roasted_4.0-8.0mm.pdf","Picture":""},
+  {"id":"2401","Site":"ZUF","Item Number":"2401","Name":"Caramel Crunch 1.5-4.0mm","Category":"Nougat"," Weight (kg) ":" 25.000 ","BBD (Days)":"360"," Calibration Min (mm) ":"1,50"," Calibration Max (mm) ":"4,00","Organic":"No","Vegan":"No","RSPO":"No","FT":"No","NOP":"No","RA":"No","Kosher":"No","Halal":"No","Spec":"https://www.kasparag.ch/fileadmin/redaktion/produkte/Entwicklung/Spec_2401_Caramel_Crunch_1.5-4.0mm.pdf","Picture":""},
+  {"id":"2403","Site":"ZUF","Item Number":"2403","Name":"Caramel Crunch with 10% Butter H&K 1.0-3.15mm","Category":"Nougat"," Weight (kg) ":" 25.000 ","BBD (Days)":"360"," Calibration Min (mm) ":"1,00"," Calibration Max (mm) ":"3,15","Organic":"No","Vegan":"No","RSPO":"No","FT":"No","NOP":"No","RA":"No","Kosher":"Yes","Halal":"Yes","Spec":"","Picture":""}
+];
+
+/* ────────────────────────────────────────
+  INIT
+──────────────────────────────────────── */
+async function init() {
+  showLoad();
+
+  // Admin-only elements start hidden
+  ge('add-btn').classList.add('hidden');
+  ge('up-btn').classList.add('hidden');
+
+  await loadCloud();
+
+  renderSidebar();
+  S.filtered = [...S.products];
+  syncCal();
+  applyFilters();
+
+  hideLoad();
+}
+
+init();
+</script>
+</body>
+</html>
