@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
 <title>OV Product Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -525,22 +524,40 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   </div>
 </div>
 
-<!-- config.js holds API_KEY, BIN_ID, and ADMIN_PIN — keep it out of version control -->
-<script src="config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 /* ════════════════════════════════════════════════════════════════
-  CONFIG is loaded from config.js (excluded from version control).
-  Copy config.example.js → config.js and fill in your values.
-  See config.example.js for setup instructions.
-  If config.js is absent (e.g. on GitHub Pages), the fallback below
-  kicks in: the app runs on localStorage and shows the setup banner.
+  ┌──────────────────────────────────────────────────────────┐
+  │                 JSONBIN SETUP GUIDE                      │
+  │                                                          │
+  │  STEP 1 — Get your Master Key                            │
+  │  • Go to https://jsonbin.io and log in                   │
+  │  • Click your avatar → "API Keys"                        │
+  │  • Copy the "Master Key" (starts with $2b$...)           │
+  │  • Paste it as the value of API_KEY below                │
+  │                                                          │
+  │  STEP 2 — Get your Bin ID                                │
+  │  • On jsonbin.io, open your bin                          │
+  │  • Look at the URL bar:                                  │
+  │    https://api.jsonbin.io/v3/b/ ► COPY_THIS ◄            │
+  │  • Or click the bin title — the ID is shown on screen    │
+  │  • Paste it as the value of BIN_ID below                 │
+  │                                                          │
+  │  STEP 3 — (Optional) Change the admin PIN                │
+  │  • Default PIN is 1234                                   │
+  │                                                          │
+  │  STEP 4 — Save this file and open it in your browser     │
+  │  • All users who open the same file will share data      │
+  │  • Any admin upload/edit is live for everyone instantly  │
+  └──────────────────────────────────────────────────────────┘
 ════════════════════════════════════════════════════════════════ */
-if (typeof CONFIG === 'undefined') {
-  // config.js was not loaded — run in local-only mode
-  var CONFIG = { API_KEY: '', BIN_ID: '', ADMIN_PIN: '' };
-}
+
+const CONFIG = {
+  API_KEY:   '$2a$10$1GlhWWVtzLmAgqtH62MY1Opf0Kz44LCzztSjb.2o/wiKS93siHjvq',   // ← paste Master Key here
+  BIN_ID:    '69d78e19aaba882197dd6d7a',        // ← paste Bin ID here
+  ADMIN_PIN: '1144',                    // ← change if desired
+};
 
 /* ────────────────────────────────────────
   GLOBAL STATE
@@ -551,7 +568,6 @@ const S = {
   pinBuf:'',editId:null,detailId:null,
   upMode:'replace',pending:null,
   catType:'category',catTemp:[],
-  pinAttempts:0, pinLockedUntil:0,
 };
 
 /* ────────────────────────────────────────
@@ -561,8 +577,8 @@ const S = {
   localStorage is kept as a silent backup.
 ──────────────────────────────────────── */
 const configured = () =>
-  !!CONFIG.API_KEY && CONFIG.API_KEY !== 'YOUR_MASTER_KEY_HERE' &&
-  !!CONFIG.BIN_ID  && CONFIG.BIN_ID  !== 'YOUR_BIN_ID_HERE';
+  CONFIG.API_KEY !== 'YOUR_MASTER_KEY_HERE' &&
+  CONFIG.BIN_ID  !== 'YOUR_BIN_ID_HERE';
 
 const BIN_URL = () => `https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`;
 const GET_HEADERS = () => ({ 'X-Master-Key': CONFIG.API_KEY });
@@ -637,12 +653,7 @@ function norm(raw) {
     return isNaN(n) ? null : n;
   };
   const bool = v => typeof v==='boolean' ? v : String(v).trim().toLowerCase()==='yes';
-  const url  = v => {
-    const s = String(v||'').trim();
-    if (!s || s.toLowerCase()==='link') return null;
-    try { const u = new URL(s); return (u.protocol==='https:'||u.protocol==='http:') ? s : null; }
-    catch { return null; }
-  };
+  const url  = v => { const s=String(v||'').trim(); return (!s||s.toLowerCase()==='link') ? null : s; };
 
   // Stable ID: prefer Item Number, else generate once
   const rawId = r.id ?? r['Item Number'] ?? r.itemNumber;
@@ -691,27 +702,10 @@ function pinBk()  { S.pinBuf=S.pinBuf.slice(0,-1); renderPinDots(); ge('perr').t
 function pinClr() { S.pinBuf=''; renderPinDots(); ge('perr').textContent=''; }
 
 function checkPin() {
-  const now = Date.now();
-  if (now < S.pinLockedUntil) {
-    const secs = Math.ceil((S.pinLockedUntil - now) / 1000);
-    ge('perr').textContent = `Too many attempts. Try again in ${secs}s.`;
-    S.pinBuf = ''; renderPinDots();
-    return;
-  }
-  if (S.pinBuf === CONFIG.ADMIN_PIN) {
-    S.pinAttempts = 0;
-    S.isAdmin = true; closeOv('ov-pin'); refreshAdminUI(); toast('Admin mode enabled ✓','ok');
+  if (S.pinBuf===CONFIG.ADMIN_PIN) {
+    S.isAdmin=true; closeOv('ov-pin'); refreshAdminUI(); toast('Admin mode enabled ✓','ok');
   } else {
-    S.pinAttempts++;
-    if (S.pinAttempts >= 3) {
-      S.pinLockedUntil = Date.now() + 30000; // 30-second lockout
-      S.pinAttempts = 0;
-      ge('perr').textContent = 'Too many attempts. Locked for 30s.';
-    } else {
-      const left = 3 - S.pinAttempts;
-      ge('perr').textContent = `Incorrect PIN — ${left} attempt${left!==1?'s':''} left.`;
-    }
-    S.pinBuf = ''; renderPinDots();
+    ge('perr').textContent='Incorrect PIN — try again.'; S.pinBuf=''; renderPinDots();
   }
 }
 
@@ -859,10 +853,9 @@ function renderSidebar() {
   RENDER PRODUCTS (CARDS + TABLE)
 ──────────────────────────────────────── */
 function imgTag(p, h=140) {
-  const pic = safeUrl(p.picture);
-  if (!pic) return `<div class="cph"><span class="pico">${catIco(p.category)}</span><span class="plbl">${x(p.category)}</span></div>`;
+  if (!p.picture) return `<div class="cph"><span class="pico">${catIco(p.category)}</span><span class="plbl">${x(p.category)}</span></div>`;
   // Use data-pid so the onerror handler can look up the product safely (avoids quote-escaping issues)
-  return `<img src="${x(pic)}" alt="${x(p.name)}" data-pid="${x(p.id)}"
+  return `<img src="${x(p.picture)}" alt="${x(p.name)}" data-pid="${x(p.id)}"
     style="width:100%;height:${h}px;object-fit:cover" onerror="imgFallback(this)">`;
 }
 
@@ -1000,11 +993,11 @@ function openDetail(id) {
           <span class="cico">${c.i}</span>${c.l}
         </div>`).join('')}
     </div>
-    ${(safeUrl(p.spec)||safeUrl(p.picture))?`
+    ${(p.spec||p.picture)?`
     <div class="dsec">Links</div>
     <div class="linksrow">
-      ${safeUrl(p.spec)?   `<a href="${x(p.spec)}"    target="_blank" rel="noopener noreferrer" class="dlink">📄 Spec Sheet</a>`:''}
-      ${safeUrl(p.picture)?`<a href="${x(p.picture)}" target="_blank" rel="noopener noreferrer" class="dlink">🖼️ Product Image</a>`:''}
+      ${p.spec?   `<a href="${x(p.spec)}"    target="_blank" class="dlink">📄 Spec Sheet</a>`:''}
+      ${p.picture?`<a href="${x(p.picture)}" target="_blank" class="dlink">🖼️ Product Image</a>`:''}
     </div>`:''}
     <div class="dsec">Similar Products</div>
     ${simHtml}
@@ -1071,8 +1064,8 @@ async function saveProduct() {
     bbd:      parseInt(ge('f-bbd').value)||null,
     calMin:   parseFloat(ge('f-cmin').value)||null,
     calMax:   parseFloat(ge('f-cmax').value)||null,
-    spec:     safeUrl(ge('f-spec').value.trim()),
-    picture:  safeUrl(ge('f-pic').value.trim()),
+    spec:     ge('f-spec').value.trim()||null,
+    picture:  ge('f-pic').value.trim()||null,
   };
   ['organic','vegan','kosher','halal','rspo','ft','nop','ra'].forEach(c=>p[c]=ge('fc-'+c).checked);
 
@@ -1357,8 +1350,7 @@ function hideLoad() { ge('loading').classList.add('hidden'); }
 function toast(msg, type='') {
   const el=document.createElement('div');
   el.className=`toast${type==='ok'?' t-ok':type==='err'?' t-err':''}`;
-  // Use textContent to prevent any HTML in msg (e.g. from error messages) from being injected
-  el.textContent=(type==='ok'?'✓ ':type==='err'?'✕ ':'ℹ ')+msg;
+  el.innerHTML=(type==='ok'?'✓':type==='err'?'✕':'ℹ')+' '+msg;
   ge('toasts').appendChild(el);
   setTimeout(()=>el.remove(), 3500);
 }
@@ -1396,14 +1388,6 @@ function showSetupHelp() {
 ──────────────────────────────────────── */
 const ge  = id => document.getElementById(id);
 const x   = s  => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-/* safeUrl — returns the URL only if its protocol is http or https, otherwise null.
-   Used in every place a stored URL is rendered into href or src to prevent
-   javascript: / data: / vbscript: protocol injection (XSS). */
-const safeUrl = s => {
-  if (!s) return null;
-  try { const u = new URL(String(s)); return (u.protocol==='https:'||u.protocol==='http:') ? String(s) : null; }
-  catch { return null; }
-};
 
 /* ────────────────────────────────────────
   SAMPLE DATA  (used on first run / no storage)
