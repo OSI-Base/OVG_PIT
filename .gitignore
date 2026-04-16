@@ -1,2 +1,1 @@
-# Secret credentials — never commit this file
-config.js
+# Add any files you want to exclude from version control here
