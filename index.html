@@ -538,7 +538,13 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   CONFIG is loaded from config.js (excluded from version control).
   Copy config.example.js → config.js and fill in your values.
   See config.example.js for setup instructions.
+  If config.js is absent (e.g. on GitHub Pages), the fallback below
+  kicks in: the app runs on localStorage and shows the setup banner.
 ════════════════════════════════════════════════════════════════ */
+if (typeof CONFIG === 'undefined') {
+  // config.js was not loaded — run in local-only mode
+  var CONFIG = { API_KEY: '', BIN_ID: '', ADMIN_PIN: '' };
+}
 
 /* ────────────────────────────────────────
   GLOBAL STATE
@@ -559,8 +565,8 @@ const S = {
   localStorage is kept as a silent backup.
 ──────────────────────────────────────── */
 const configured = () =>
-  CONFIG.API_KEY !== 'YOUR_MASTER_KEY_HERE' &&
-  CONFIG.BIN_ID  !== 'YOUR_BIN_ID_HERE';
+  !!CONFIG.API_KEY && CONFIG.API_KEY !== 'YOUR_MASTER_KEY_HERE' &&
+  !!CONFIG.BIN_ID  && CONFIG.BIN_ID  !== 'YOUR_BIN_ID_HERE';
 
 const BIN_URL = () => `https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`;
 const GET_HEADERS = () => ({ 'X-Master-Key': CONFIG.API_KEY });
