@@ -155,13 +155,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .mbody{padding:18px 22px 22px}
 .mfoot{padding:0 22px 22px;display:flex;gap:9px;justify-content:flex-end}
 
-/* ── PIN ── */
-.pdots{display:flex;gap:12px;justify-content:center;margin:16px 0 6px}
-.pdot{width:13px;height:13px;border-radius:50%;background:var(--border);transition:background .12s}.pdot.on{background:var(--navy)}
-.perr{font-size:12.5px;color:#DC2626;text-align:center;min-height:18px;margin-bottom:10px}
-.ppad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;max-width:210px;margin:0 auto}
-.pkey{aspect-ratio:1;border-radius:var(--r);border:1px solid var(--border);background:var(--white);font-family:var(--font);font-size:19px;font-weight:500;cursor:pointer;transition:all .12s;display:flex;align-items:center;justify-content:center}
-.pkey:hover{background:var(--bg);border-color:var(--navy)}.pkey:active{background:var(--navy);color:#fff;border-color:var(--navy)}
+/* ── LOGIN ── */
+.lerr{background:#FEF2F2;color:#DC2626;border:1px solid #FEE2E2;border-radius:8px;padding:9px 12px;font-size:13px;margin-bottom:14px}
 
 /* ── FORM ── */
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -248,7 +243,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   SETUP BANNER
 ═══════════════════════════════════ -->
 <div class="banner hidden" id="banner">
-  ⚙️ <strong>JSONBin not configured.</strong> Open this file in a text editor, set your API Key and Bin ID in the CONFIG block at the top of the &lt;script&gt;. &nbsp;<a onclick="showSetupHelp()">View setup guide</a> — using local storage for now.
+  ⚠️ <strong>Could not connect to the database.</strong> Check your connection and reload the page.
 </div>
 
 <!-- ═══════════════════════════════════
@@ -400,22 +395,15 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 <div class="toasts" id="toasts"></div>
 
 <!-- ═══════════════════════════════════
-  MODAL: PIN
+  MODAL: ADMIN LOGIN
 ═══════════════════════════════════ -->
-<div class="ov" id="ov-pin">
+<div class="ov" id="ov-login">
   <div class="modal modal-sm">
-    <div class="mhead"><div><div class="mtitle">Admin Login</div><div class="msub">Enter your 4-digit PIN</div></div><button class="mclose" onclick="closeOv('ov-pin')">✕</button></div>
-    <div class="mbody" style="text-align:center">
-      <div class="pdots" id="pdots"><div class="pdot"></div><div class="pdot"></div><div class="pdot"></div><div class="pdot"></div></div>
-      <div class="perr" id="perr"></div>
-      <div class="ppad">
-        <button class="pkey" onclick="pp('1')">1</button><button class="pkey" onclick="pp('2')">2</button><button class="pkey" onclick="pp('3')">3</button>
-        <button class="pkey" onclick="pp('4')">4</button><button class="pkey" onclick="pp('5')">5</button><button class="pkey" onclick="pp('6')">6</button>
-        <button class="pkey" onclick="pp('7')">7</button><button class="pkey" onclick="pp('8')">8</button><button class="pkey" onclick="pp('9')">9</button>
-        <button class="pkey" style="font-size:13px" onclick="pinClr()">C</button>
-        <button class="pkey" onclick="pp('0')">0</button>
-        <button class="pkey" style="font-size:13px" onclick="pinBk()">⌫</button>
-      </div>
+    <div class="mhead"><div><div class="mtitle">Admin Login</div><div class="msub">Sign in to manage products</div></div><button class="mclose" onclick="closeOv('ov-login')">✕</button></div>
+    <div class="mbody">
+      <div class="lerr hidden" id="lerr"></div>
+      <div class="fg" style="margin-bottom:18px"><label class="flbl">Password</label><input class="finput" type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn btn-p" style="width:100%;justify-content:center" id="l-btn" onclick="doLogin()">Sign In</button>
     </div>
   </div>
 </div>
@@ -524,40 +512,18 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 /* ════════════════════════════════════════════════════════════════
-  ┌──────────────────────────────────────────────────────────┐
-  │                 JSONBIN SETUP GUIDE                      │
-  │                                                          │
-  │  STEP 1 — Get your Master Key                            │
-  │  • Go to https://jsonbin.io and log in                   │
-  │  • Click your avatar → "API Keys"                        │
-  │  • Copy the "Master Key" (starts with $2b$...)           │
-  │  • Paste it as the value of API_KEY below                │
-  │                                                          │
-  │  STEP 2 — Get your Bin ID                                │
-  │  • On jsonbin.io, open your bin                          │
-  │  • Look at the URL bar:                                  │
-  │    https://api.jsonbin.io/v3/b/ ► COPY_THIS ◄            │
-  │  • Or click the bin title — the ID is shown on screen    │
-  │  • Paste it as the value of BIN_ID below                 │
-  │                                                          │
-  │  STEP 3 — (Optional) Change the admin PIN                │
-  │  • Default PIN is 1234                                   │
-  │                                                          │
-  │  STEP 4 — Save this file and open it in your browser     │
-  │  • All users who open the same file will share data      │
-  │  • Any admin upload/edit is live for everyone instantly  │
-  └──────────────────────────────────────────────────────────┘
+  SUPABASE CONFIG
 ════════════════════════════════════════════════════════════════ */
 
-const CONFIG = {
-  API_KEY:   '$2a$10$1GlhWWVtzLmAgqtH62MY1Opf0Kz44LCzztSjb.2o/wiKS93siHjvq',   // ← paste Master Key here
-  BIN_ID:    '69d78e19aaba882197dd6d7a',        // ← paste Bin ID here
-  ADMIN_PIN: '1144',                    // ← change if desired
-};
+const SUPABASE_URL = 'https://urjmfyzchwnupsrutlpd.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_SSl4zTSVLco4ngKfdnGb3g_BuKK3llN';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ────────────────────────────────────────
   GLOBAL STATE
@@ -565,76 +531,53 @@ const CONFIG = {
 const S = {
   products:[],categories:[],sites:[],filtered:[],
   isAdmin:false,viewMode:'card',search:'',
-  pinBuf:'',editId:null,detailId:null,
+  editId:null,detailId:null,
   upMode:'replace',pending:null,
   catType:'category',catTemp:[],
 };
 
 /* ────────────────────────────────────────
-  JSONBIN — DATA LAYER
-  All reads come from JSONBin on load.
-  All writes go to JSONBin immediately.
-  localStorage is kept as a silent backup.
+  SUPABASE — DATA LAYER
+  Reads active products on load.
+  Writes go directly to individual rows.
 ──────────────────────────────────────── */
-const configured = () =>
-  CONFIG.API_KEY !== 'YOUR_MASTER_KEY_HERE' &&
-  CONFIG.BIN_ID  !== 'YOUR_BIN_ID_HERE';
-
-const BIN_URL = () => `https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`;
-const GET_HEADERS = () => ({ 'X-Master-Key': CONFIG.API_KEY });
-const PUT_HEADERS = () => ({ 'X-Master-Key': CONFIG.API_KEY, 'Content-Type': 'application/json' });
-
 async function loadCloud() {
-  if (!configured()) { loadLocal(); showBanner(); return; }
   try {
-    const r = await fetch(BIN_URL() + '/latest', { headers: GET_HEADERS() });
-    if (!r.ok) throw new Error(r.status);
-    const j = await r.json();
-    hydrate(j.record);
+    const { data, error } = await db
+      .from('products')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
+    if (error) throw error;
+    hydrate(data || []);
   } catch(e) {
-    console.error('Cloud load failed:', e);
-    toast('Could not reach JSONBin — using local data', 'err');
-    loadLocal();
+    console.error('Load failed:', e);
+    const msg = e?.message || e?.details || JSON.stringify(e);
+    toast('DB error: ' + msg, 'err');
+    showBanner();
+    S.products = [];
   }
 }
 
-async function saveCloud(silent=false) {
-  const data = dump();
-  localStorage.setItem('ov_data', JSON.stringify(data)); // local backup always
-  if (!configured()) return;
-  try {
-    const r = await fetch(BIN_URL(), {
-      method:'PUT', headers:PUT_HEADERS(), body:JSON.stringify(data)
-    });
-    if (!r.ok) throw new Error(r.status);
-    if (!silent) toast('Saved to cloud ✓','ok');
-  } catch(e) {
-    console.error('Cloud save failed:', e);
-    toast('Cloud save failed — saved locally','err');
-  }
+/* Upsert a single product row to Supabase */
+async function saveRow(p) {
+  const { error } = await db.from('products').upsert(toSupabase(p), { onConflict: 'id' });
+  if (error) throw error;
 }
 
-function loadLocal() {
-  const raw = localStorage.getItem('ov_data');
-  if (raw) { try { hydrate(JSON.parse(raw)); return; } catch(e){} }
-  hydrate({ products:SAMPLE, categories:[], sites:[] });
-}
-
-/* hydrate() accepts either:
-   - a raw array (first-time JSONBin upload of the original JSON)
-   - our wrapped {products, categories, sites} object */
+/* ────────────────────────────────────────
+  COLUMN MAPPING
+  norm()       — Supabase row → internal JS object
+  toSupabase() — internal JS object → Supabase row
+──────────────────────────────────────── */
+/* hydrate() — accepts a flat array of Supabase rows */
 function hydrate(data) {
-  const rawArr = Array.isArray(data) ? data : (data.products || []);
+  const rawArr = Array.isArray(data) ? data : [];
   S.products   = rawArr.map(norm);
-  const dc = [...new Set(S.products.map(p=>p.category).filter(Boolean))].sort();
-  const ds = [...new Set(S.products.map(p=>p.site).filter(Boolean))].sort();
-  const sc = Array.isArray(data.categories) ? data.categories : [];
-  const ss = Array.isArray(data.sites)      ? data.sites      : [];
-  S.categories = [...new Set([...sc,...dc])].sort();
-  S.sites      = [...new Set([...ss,...ds])].sort();
+  S.categories = [...new Set(S.products.map(p=>p.category).filter(Boolean))].sort();
+  S.sites      = [...new Set(S.products.map(p=>p.site).filter(Boolean))].sort();
+  buildFuseIndex(); // rebuild search index whenever data changes
 }
-
-const dump = () => ({ products:S.products, categories:S.categories, sites:S.sites });
 
 /* ────────────────────────────────────────
   DATA NORMALIZATION
@@ -642,11 +585,10 @@ const dump = () => ({ products:S.products, categories:S.categories, sites:S.site
   clean, typed product object.
 ──────────────────────────────────────── */
 function norm(raw) {
-  // Trim all key names (raw export has " Weight (kg) " etc.)
+  // Trim all key names (raw CSV/Excel imports may have padded headers)
   const r = {};
   Object.keys(raw).forEach(k => r[k.trim()] = raw[k]);
 
-  // Helpers
   const num = v => {
     if (v===null||v===undefined||v==='') return null;
     const n = parseFloat(String(v).replace(/\s/g,'').replace(',','.'));
@@ -655,63 +597,136 @@ function norm(raw) {
   const bool = v => typeof v==='boolean' ? v : String(v).trim().toLowerCase()==='yes';
   const url  = v => { const s=String(v||'').trim(); return (!s||s.toLowerCase()==='link') ? null : s; };
 
-  // Stable ID: prefer Item Number, else generate once
-  const rawId = r.id ?? r['Item Number'] ?? r.itemNumber;
+  // Prefer Supabase UUID id; fall back to item_number or generated
+  const rawId = r.id ?? r.item_number ?? r['Item Number'] ?? r.itemNumber;
   const id    = (rawId!==undefined && rawId!=='') ? String(rawId) : uid();
 
   return {
     id,
-    itemNumber:    num(r['Item Number']           ?? r.itemNumber),
-    productNumber: String(r['Product Number']     ?? r.productNumber ?? '').trim(),
-    name:          String(r['Name']               ?? r.name ?? '').trim(),
-    category:      String(r['Category']           ?? r.category ?? '').trim(),
-    site:          String(r['Site']               ?? r.site ?? '').trim() || 'ZUF',
-    weight:        num(r['Weight (kg)']           ?? r.weight),
-    bbd:           num(r['BBD (Days)']            ?? r.bbd),
-    calMin:        num(r['Calibration Min (mm)']  ?? r['Calibration Min'] ?? r.calMin),
-    calMax:        num(r['Calibration Max (mm)']  ?? r['Calibration Max'] ?? r.calMax),
-    organic: bool(r.Organic  ?? r.organic),
-    vegan:   bool(r.Vegan    ?? r.vegan),
-    rspo:    bool(r.RSPO     ?? r.rspo),
-    ft:      bool(r.FT       ?? r.ft),
-    nop:     bool(r.NOP      ?? r.nop),
-    ra:      bool(r.RA       ?? r.ra),
-    kosher:  bool(r.Kosher   ?? r.kosher),
-    halal:   bool(r.Halal    ?? r.halal),
-    spec:    url(r.Spec      ?? r.spec),
-    picture: url(r.Picture   ?? r.picture),
+    itemNumber:    num(r.item_number          ?? r['Item Number']          ?? r.itemNumber),
+    productNumber: String(r.product_number    ?? r['Product Number']       ?? r.productNumber ?? '').trim(),
+    name:          String(r.name              ?? r['Name']                 ?? '').trim(),
+    category:      String(r.category          ?? r['Category']             ?? '').trim(),
+    site:          String(r.site_code         ?? r['Site']                 ?? r.site ?? '').trim(),
+    weight:        num(r.weight_kg            ?? r['Weight (kg)']          ?? r.weight),
+    bbd:           num(r.bbd_days             ?? r['BBD (Days)']           ?? r.bbd),
+    calMin:        num(r.calibration_min_mm   ?? r['Calibration Min (mm)'] ?? r['Calibration Min'] ?? r.calMin),
+    calMax:        num(r.calibration_max_mm   ?? r['Calibration Max (mm)'] ?? r['Calibration Max'] ?? r.calMax),
+    organic: bool(r.organic  ?? r.Organic),
+    vegan:   bool(r.vegan    ?? r.Vegan),
+    rspo:    bool(r.rspo     ?? r.RSPO),
+    ft:      bool(r.ft       ?? r.FT),
+    nop:     bool(r.nop      ?? r.NOP),
+    ra:      bool(r.ra       ?? r.RA),
+    kosher:  bool(r.kosher   ?? r.Kosher),
+    halal:   bool(r.halal    ?? r.Halal),
+    spec:    url(r.spec_url  ?? r.Spec   ?? r.spec),
+    picture: url(r.picture_url ?? r.Picture ?? r.picture),
+    search_text: String(r.search_text ?? '').toLowerCase(),
   };
+}
+
+/* Map internal JS object → Supabase row shape */
+function toSupabase(p) {
+  const searchText = [
+    p.site, p.name, p.category,
+    p.itemNumber, p.productNumber,
+    p.organic  ? 'organic'           : '',
+    p.vegan    ? 'vegan'             : '',
+    p.rspo     ? 'rspo'              : '',
+    p.ft       ? 'ft fairtrade'      : '',
+    p.nop      ? 'nop'               : '',
+    p.ra       ? 'ra rainforest'     : '',
+    p.kosher   ? 'kosher'            : '',
+    p.halal    ? 'halal'             : '',
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  const row = {
+    site_code:            p.site         || null,
+    item_number:          p.itemNumber   ?? null,
+    product_number:       p.productNumber || null,
+    name:                 p.name         || null,
+    category:             p.category     || null,
+    weight_kg:            p.weight       ?? null,
+    bbd_days:             p.bbd          ?? null,
+    calibration_min_mm:   p.calMin       ?? null,
+    calibration_max_mm:   p.calMax       ?? null,
+    organic:  p.organic,
+    vegan:    p.vegan,
+    rspo:     p.rspo,
+    ft:       p.ft,
+    nop:      p.nop,
+    ra:       p.ra,
+    kosher:   p.kosher,
+    halal:    p.halal,
+    spec_url:     p.spec    || null,
+    picture_url:  p.picture || null,
+    search_text:  searchText,
+    is_active:    true,
+  };
+  // Only include id if it looks like a real Supabase UUID (not a generated local id)
+  if (p.id && /^[0-9a-f-]{36}$/i.test(p.id)) row.id = p.id;
+  return row;
 }
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
 /* ────────────────────────────────────────
-  AUTH — PIN MODAL
+  AUTH — SHA-256 PASSWORD HASH
+  Plaintext never stored. Hash compared
+  using Web Crypto API at runtime.
+  Session persists in sessionStorage.
 ──────────────────────────────────────── */
+const ADMIN_HASH = '69ad882b24a08719b96732746661bb6e8e8071945789e725d6d37637817d6f48';
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
 function adminClick() {
-  if (S.isAdmin) { S.isAdmin=false; refreshAdminUI(); toast('Admin mode off'); }
-  else           { S.pinBuf=''; renderPinDots(); openOv('ov-pin'); }
-}
-
-function pp(d) {
-  if (S.pinBuf.length>=4) return;
-  S.pinBuf += d; renderPinDots();
-  if (S.pinBuf.length===4) setTimeout(checkPin,120);
-}
-function pinBk()  { S.pinBuf=S.pinBuf.slice(0,-1); renderPinDots(); ge('perr').textContent=''; }
-function pinClr() { S.pinBuf=''; renderPinDots(); ge('perr').textContent=''; }
-
-function checkPin() {
-  if (S.pinBuf===CONFIG.ADMIN_PIN) {
-    S.isAdmin=true; closeOv('ov-pin'); refreshAdminUI(); toast('Admin mode enabled ✓','ok');
-  } else {
-    ge('perr').textContent='Incorrect PIN — try again.'; S.pinBuf=''; renderPinDots();
+  if (S.isAdmin) { doLogout(); }
+  else {
+    ge('lerr').classList.add('hidden');
+    ge('l-pass').value = '';
+    openOv('ov-login');
+    setTimeout(() => ge('l-pass').focus(), 120);
   }
 }
 
-function renderPinDots() {
-  document.querySelectorAll('.pdot').forEach((d,i)=>d.classList.toggle('on',i<S.pinBuf.length));
+async function doLogin() {
+  const pass = ge('l-pass').value;
+  if (!pass) { showLoginErr('Please enter the admin password.'); return; }
+
+  const btn = ge('l-btn');
+  btn.textContent = 'Checking…'; btn.disabled = true;
+
+  const hash = await sha256(pass);
+  btn.textContent = 'Sign In'; btn.disabled = false;
+
+  if (hash !== ADMIN_HASH) { showLoginErr('Incorrect password — try again.'); ge('l-pass').value=''; return; }
+
+  S.isAdmin = true;
+  sessionStorage.setItem('ov_admin', '1');
+  closeOv('ov-login');
+  refreshAdminUI();
+  toast('Admin mode enabled ✓', 'ok');
 }
+
+function doLogout() {
+  S.isAdmin = false;
+  sessionStorage.removeItem('ov_admin');
+  refreshAdminUI();
+  toast('Admin mode off');
+}
+
+function showLoginErr(msg) {
+  const el = ge('lerr');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+function onAuthChange() {} // no-op — kept for compatibility
 
 function refreshAdminUI() {
   ge('admin-btn').classList.toggle('on',S.isAdmin);
@@ -724,42 +739,257 @@ function refreshAdminUI() {
 }
 
 /* ────────────────────────────────────────
-  FILTER & SEARCH ENGINE
+  SMART SEARCH ENGINE
+  Supports:
+  • Precise direct matching (prefix, contains) — always runs first
+  • Fuse.js fuzzy — only for typo tolerance on queries ≥ 5 chars,
+    and only for products NOT already found by direct matching
+  • Size tokens  — "2-5mm", "1.5 to 4mm", "3mm"
+  • Cert tokens  — "vegan", "halal", "organic", etc.
+  • Mixed query  — "vegan caramel 2-5mm" all at once
 ──────────────────────────────────────── */
-function handleSearch(v) { S.search=v.toLowerCase().trim(); applyFilters(); }
 
-function applyFilters() {
-  const q   = S.search;
-  const a   = +ge('ca').value, b = +ge('cb').value;
-  const clo = Math.min(a,b),   chi = Math.max(a,b);
-  const bMin= +ge('bmin').value||0, bMax=+ge('bmax').value||9999;
-  const wMin= +ge('wmin').value||0, wMax=+ge('wmax').value||9999;
-  const cats  = checked('fl-cat');
-  const sites = checked('fl-site');
-  const certs = checked('fl-cert');
+/* Strip accents + lowercase. "Dragée" → "dragee", "Crème" → "creme" */
+const normalise = str =>
+  String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
-  S.filtered = S.products.filter(p => {
-    if (q) {
-      const t = [p.name,p.category,p.itemNumber,p.site,
-        p.calMin,p.calMax,
-        p.vegan?'vegan':'', p.organic?'organic':'',
-        p.kosher?'kosher':'', p.halal?'halal':'',
-        p.rspo?'rspo':'', p.ft?'ft fairtrade':'',
-        p.nop?'nop':'', p.ra?'ra rainforest':'',
-      ].join(' ').toLowerCase();
-      if (!t.includes(q)) return false;
-    }
-    if (cats.length  && !cats.includes(p.category))  return false;
-    if (sites.length && !sites.includes(p.site))     return false;
-    for (const c of certs) if (!p[c]) return false;
-    // Calibration: only restrict products that HAVE calibration data
-    if (p.calMin!==null && p.calMax!==null)
-      if (p.calMax<clo || p.calMin>chi) return false;
-    if (p.bbd!==null    && (p.bbd<bMin    || p.bbd>bMax))    return false;
-    if (p.weight!==null && (p.weight<wMin || p.weight>wMax)) return false;
-    return true;
+let _fuse = null;
+
+function buildFuseIndex() {
+  /* Pre-compute a single normalised searchable string per product.
+     Stored as p._s — used by both direct search and Fuse. */
+  S.products.forEach(p => {
+    p._s = normalise([
+      p.name, p.category, p.site,
+      String(p.itemNumber || ''), p.productNumber,
+      p.search_text,
+    ].join(' '));
   });
 
+  /* Fuse indexes the pre-normalised _s field only.
+     This guarantees accent-stripping without relying on getFn. */
+  _fuse = new Fuse(
+    S.products.map(p => ({ id: p.id, t: p._s })),
+    {
+      includeScore:       true,
+      threshold:          0.28,
+      ignoreLocation:     true,
+      minMatchCharLength: 2,
+      keys: [{ name: 't', weight: 1 }],
+    }
+  );
+}
+
+/* ── Tier 1+2 text search ──────────────────────────────────────
+   Returns Map<productId, score 0–100>
+   Tier 1 — direct normalised matching (precise, no false positives)
+   Tier 2 — Fuse fuzzy (typo tolerance, supplements tier 1 only)
+─────────────────────────────────────────────────────────────── */
+function runTextSearch(rawQuery) {
+  const q      = normalise(rawQuery);
+  const tokens = q.split(/\s+/).filter(w => w.length >= 1);
+  if (!q || !tokens.length) return new Map();
+
+  const results = new Map(); // id → score 0-100
+
+  S.products.forEach(p => {
+    const nCat  = normalise(p.category);
+    const nName = normalise(p.name);
+    const nItem = String(p.itemNumber || '');
+    const nAll  = p._s; // pre-normalised full searchable string
+    let   sc    = 0;
+
+    if (tokens.length === 1) {
+      const tok = tokens[0];
+
+      // Category (highest weight — most likely what user is typing)
+      if (nCat === tok)              sc = Math.max(sc, 100);
+      else if (nCat.startsWith(tok)) sc = Math.max(sc,  93);
+      else if (nCat.includes(tok))   sc = Math.max(sc,  80);
+
+      // Product name
+      if (nName === tok)               sc = Math.max(sc,  97);
+      else if (nName.startsWith(tok))  sc = Math.max(sc,  87);
+      else if (nName.includes(' '+tok) || nName.startsWith(tok))
+                                       sc = Math.max(sc,  72);
+
+      // Item number
+      if (nItem === tok || nItem.startsWith(tok)) sc = Math.max(sc, 78);
+
+      // Full searchable text fallback (lowest priority)
+      if (sc === 0 && nAll.includes(tok)) sc = 50;
+
+    } else {
+      // Multi-word query: ALL tokens must appear somewhere in the searchable text
+      if (tokens.every(tok => nAll.includes(tok))) {
+        // Bonus if all tokens appear in the product name
+        sc = tokens.every(tok => nName.includes(tok)) ? 82 : 58;
+      }
+    }
+
+    if (sc > 0) results.set(p.id, sc);
+  });
+
+  // Tier 2 — Fuse for typos (only on longer queries, only supplements direct matches)
+  if (q.length >= 5 && _fuse) {
+    _fuse.search(q).forEach(r => {
+      if (!results.has(r.item.id)) {
+        const pts = Math.round((1 - r.score) * 65);
+        if (pts >= 35) results.set(r.item.id, pts);
+      }
+    });
+  }
+
+  return results;
+}
+
+/* Cert keyword → internal key mapping */
+const CERT_KEYWORDS = {
+  vegan:'vegan', organic:'organic', kosher:'kosher', halal:'halal',
+  rspo:'rspo', 'fair trade':'ft', fairtrade:'ft', ft:'ft',
+  nop:'nop', ra:'ra', rainforest:'ra',
+};
+
+/* Parse a raw query string into structured tokens */
+function parseQuery(raw) {
+  // Normalise accents and lowercase so "Dragée" → "dragee", "vegan" stays "vegan"
+  let q = normalise(raw);
+
+  // --- Extract size range: "2-5mm", "2 to 5mm", "2.5-10", "3mm" ---
+  let sizeMin = null, sizeMax = null;
+
+  // Range: 1.5-4mm  /  1.5 to 4 mm  /  1,5-4,0mm
+  const rangeRx = /(\d+[,.]?\d*)\s*(?:-|–|to)\s*(\d+[,.]?\d*)\s*mm?/;
+  const rangeM  = q.match(rangeRx);
+  if (rangeM) {
+    sizeMin = parseFloat(rangeM[1].replace(',','.'));
+    sizeMax = parseFloat(rangeM[2].replace(',','.'));
+    q = q.replace(rangeM[0], ' ');
+  } else {
+    // Single value: "3mm", "3 mm"
+    const singleRx = /(\d+[,.]?\d*)\s*mm/;
+    const singleM  = q.match(singleRx);
+    if (singleM) {
+      const v = parseFloat(singleM[1].replace(',','.'));
+      sizeMin = v - 0.5; sizeMax = v + 0.5; // ±0.5mm tolerance
+      q = q.replace(singleM[0], ' ');
+    }
+  }
+
+  // --- Extract cert keywords ---
+  const certHits = [];
+  // Sort by length desc so "fair trade" matches before "fair"
+  const sortedKeys = Object.keys(CERT_KEYWORDS).sort((a,b)=>b.length-a.length);
+  for (const kw of sortedKeys) {
+    if (q.includes(kw)) {
+      certHits.push(CERT_KEYWORDS[kw]);
+      q = q.replace(kw, ' ');
+    }
+  }
+
+  // --- Remaining text for Fuse ---
+  const textQuery = q.replace(/\s+/g, ' ').trim();
+
+  return { textQuery, sizeMin, sizeMax, certHits: [...new Set(certHits)] };
+}
+
+/* Score a product against all parsed tokens (text + size + certs).
+   Returns null if the product should be excluded entirely. */
+function smartScore(p, parsed, textScoreMap) {
+  let score = 0;
+  const { textQuery, sizeMin, sizeMax, certHits } = parsed;
+
+  // --- Text match (0–60 pts, scaled from textScoreMap's 0–100) ---
+  if (textQuery) {
+    const ts = textScoreMap.get(p.id);
+    if (ts === undefined) return null; // no text match → hard exclude
+    score += Math.round(ts * 0.6);    // 100 → 60 pts max
+  }
+
+  // --- Size match (0–25 pts) ---
+  if (sizeMin !== null) {
+    if (p.calMin !== null && p.calMax !== null) {
+      const overlap = Math.min(p.calMax, sizeMax) - Math.max(p.calMin, sizeMin);
+      if (overlap >= 0) {
+        score += 25;
+      } else {
+        const gap = Math.abs(overlap);
+        const pts = Math.max(0, 25 - gap * 8);
+        if (pts < 5) return null; // too far from range → exclude
+        score += pts;
+      }
+    } else {
+      score += 8; // no calibration data — neutral, don't exclude
+    }
+  }
+
+  // --- Cert match (0–15 pts split equally) ---
+  if (certHits.length) {
+    const each = 15 / certHits.length;
+    for (const ck of certHits) {
+      if (p[ck]) score += each;
+    }
+    // If product meets NONE of the required certs → exclude
+    if (certHits.every(ck => !p[ck])) return null;
+  }
+
+  return Math.round(score);
+}
+
+let _searchDebounce = null;
+
+function handleSearch(v) {
+  S.search = v.trim();
+  clearTimeout(_searchDebounce);
+  _searchDebounce = setTimeout(applyFilters, 250);
+}
+
+function applyFilters() {
+  const parsed   = parseQuery(S.search);
+  const hasText  = parsed.textQuery.length > 0;
+  const hasSize  = parsed.sizeMin !== null;
+  const hasCerts = parsed.certHits.length > 0;
+  const hasQuery = hasText || hasSize || hasCerts;
+
+  // Sidebar filter values
+  const calLo  = Math.min(+ge('ca').value, +ge('cb').value);
+  const calHi  = Math.max(+ge('ca').value, +ge('cb').value);
+  const bMin   = +ge('bmin').value || 0, bMax = +ge('bmax').value || 9999;
+  const wMin   = +ge('wmin').value || 0, wMax = +ge('wmax').value || 9999;
+  const cats   = checked('fl-cat');
+  const sites  = checked('fl-site');
+  const certs  = checked('fl-cert');
+  const hasSidebarFilters = cats.length||sites.length||certs.length||
+    calLo>0||calHi<20||bMin>0||bMax<9999||wMin>0||wMax<9999;
+
+  // --- Build text score map via tiered search ---
+  let textScoreMap = new Map();
+  if (hasText) {
+    textScoreMap = runTextSearch(parsed.textQuery);
+  }
+
+  // --- Score + filter every product ---
+  let scoredProducts = S.products.map(p => {
+    // Hard sidebar filters first (fast exit)
+    if (cats.length  && !cats.includes(p.category)) return null;
+    if (sites.length && !sites.includes(p.site))    return null;
+    for (const c of certs) if (!p[c]) return null;
+    if (p.calMin !== null && p.calMax !== null)
+      if (p.calMax < calLo || p.calMin > calHi) return null;
+    if (p.bbd    !== null && (p.bbd    < bMin || p.bbd    > bMax)) return null;
+    if (p.weight !== null && (p.weight < wMin || p.weight > wMax)) return null;
+
+    if (!hasQuery) return { p, score: 0 };
+
+    const sc = smartScore(p, parsed, textScoreMap);
+    if (sc === null) return null;
+    return { p, score: sc };
+  }).filter(Boolean);
+
+  // Sort by score descending when there's an active query
+  if (hasQuery) scoredProducts.sort((a, b) => b.score - a.score);
+
+  S.filtered = scoredProducts.map(r => r.p);
   renderProducts();
 }
 
@@ -1070,33 +1300,46 @@ async function saveProduct() {
   ['organic','vegan','kosher','halal','rspo','ft','nop','ra'].forEach(c=>p[c]=ge('fc-'+c).checked);
 
   showLoad();
-  if (S.editId) {
-    const i = S.products.findIndex(q=>q.id===String(S.editId));
-    if (i>=0) S.products[i]={...S.products[i],...p};
-    toast('Product updated','ok');
-  } else {
-    p.id=uid();
-    S.products.push(p);
-    if (p.category && !S.categories.includes(p.category)) S.categories.push(p.category);
-    if (p.site     && !S.sites.includes(p.site))          S.sites.push(p.site);
-    toast('Product added','ok');
+  try {
+    if (S.editId) {
+      const existing = S.products.find(q=>q.id===String(S.editId));
+      p.id = existing?.id;
+      await saveRow(p);
+      const i = S.products.findIndex(q=>q.id===String(S.editId));
+      if (i>=0) S.products[i]={...S.products[i],...p};
+      toast('Product updated','ok');
+    } else {
+      await saveRow(p); // Supabase generates the UUID
+      // Reload to get the server-assigned id
+      await loadCloud();
+    }
+  } catch(e) {
+    console.error('Save failed:', e);
+    toast('Save failed — '+e.message,'err');
+    hideLoad(); return;
   }
 
-  await saveCloud(true);
   hideLoad();
   closeOv('ov-product');
   renderSidebar();
   applyFilters();
+  if (!S.editId) toast('Product added ✓','ok');
 }
 
 async function delProduct(id) {
   if (!S.isAdmin) { toast('Admin access required','err'); return; }
-  if (!confirm('Delete this product? This action cannot be undone.')) return;
-  S.products = S.products.filter(p=>p.id!==String(id));
+  if (!confirm('Archive this product? It will no longer appear in the catalogue.')) return;
   showLoad();
-  await saveCloud(true);
+  const { error } = await db.from('products').update({ is_active: false }).eq('id', id);
+  if (error) {
+    console.error('Archive failed:', error);
+    toast('Failed to archive product','err');
+    hideLoad(); return;
+  }
+  S.products = S.products.filter(p=>p.id!==String(id));
   hideLoad();
-  toast('Product deleted','ok');
+  toast('Product archived','ok');
+  renderSidebar();
   applyFilters();
 }
 
@@ -1150,26 +1393,46 @@ function processFile(file) {
 async function confirmUpload() {
   if (!S.pending) return;
   showLoad();
-  if (S.upMode==='replace') {
-    S.products = S.pending;
-  } else {
-    const existing = new Set(S.products.map(p=>String(p.itemNumber)));
-    const added    = S.pending.filter(p=>!existing.has(String(p.itemNumber)));
-    S.products = [...S.products, ...added];
-    toast(`Merged: ${added.length} new products added`,'ok');
-  }
-  // Rebuild category/site lists from data
-  const dc=[...new Set(S.products.map(p=>p.category).filter(Boolean))].sort();
-  const ds=[...new Set(S.products.map(p=>p.site).filter(Boolean))].sort();
-  S.categories=[...new Set([...S.categories,...dc])].sort();
-  S.sites     =[...new Set([...S.sites,...ds])].sort();
+  try {
+    if (S.upMode==='replace') {
+      // Deactivate all current active products
+      const { error: deactivateErr } = await db
+        .from('products')
+        .update({ is_active: false })
+        .eq('is_active', true);
+      if (deactivateErr) throw deactivateErr;
 
-  await saveCloud();
+      // Upsert all incoming rows as new active records (no id → Supabase generates UUID)
+      const rows = S.pending.map(p => toSupabase(p));
+      const { error: upsertErr } = await db.from('products').upsert(rows);
+      if (upsertErr) throw upsertErr;
+
+      toast(`Imported ${rows.length} products ✓`, 'ok');
+
+    } else {
+      // Merge: only add rows whose (item_number + site_code) combo doesn't already exist
+      const existing = new Set(S.products.map(p=>`${p.itemNumber}_${p.site}`));
+      const toAdd    = S.pending.filter(p=>!existing.has(`${p.itemNumber}_${p.site}`));
+
+      if (toAdd.length) {
+        const rows = toAdd.map(p => toSupabase(p));
+        const { error } = await db.from('products').upsert(rows);
+        if (error) throw error;
+      }
+      toast(`Merged: ${toAdd.length} new product${toAdd.length!==1?'s':''} added`, 'ok');
+    }
+
+    await loadCloud();
+  } catch(e) {
+    console.error('Upload failed:', e);
+    toast('Upload failed — ' + e.message, 'err');
+  }
+
   hideLoad();
   closeOv('ov-upload');
   renderSidebar();
+  S.filtered = [...S.products];
   applyFilters();
-  if (S.upMode==='replace') toast(`Imported ${S.products.length} products ✓`,'ok');
 }
 
 /* ────────────────────────────────────────
@@ -1203,9 +1466,6 @@ function addCatItem() {
 async function saveCatModal() {
   if (S.catType==='category') S.categories=[...S.catTemp];
   else                        S.sites=[...S.catTemp];
-  showLoad();
-  await saveCloud(true);
-  hideLoad();
   closeOv('ov-cat');
   renderSidebar();
   toast('Changes saved ✓','ok');
@@ -1213,92 +1473,120 @@ async function saveCatModal() {
 
 /* ────────────────────────────────────────
   SMART MATCHER
-  Scoring (max 100 pts):
-    Category   → 40 pts (exact match)
-    Calibration→ 35 pts (target size within product range = full;
-                          outside = degrades by distance × 7)
-    Certs      → 25 pts (split equally across required certs)
+  Scoring — normalised against criteria entered:
+    Category   → 40 pts  (hard exclusion if mismatch)
+    Calibration→ 35 pts  (overlap = full; degrades with distance)
+    Certs      → 25 pts  (split equally across required certs)
+    Site       → +15 bonus (not in denominator — additive only)
+  Final score = earned / maxPossible × 100, capped at 100.
+  This means a perfect match on the criteria you specified = 100%.
 ──────────────────────────────────────── */
 function runMatcher() {
-  const cat    = ge('m-cat').value;
-  const smin   = parseFloat(ge('m-smin').value);
-  const smax   = parseFloat(ge('m-smax').value);
-  const site   = ge('m-site').value;
+  const cat      = ge('m-cat').value;
+  const smin     = parseFloat(ge('m-smin').value);
+  const smax     = parseFloat(ge('m-smax').value);
+  const site     = ge('m-site').value;
   const reqCerts = Array.from(ge('m-chips').querySelectorAll('.chip.on')).map(c=>c.dataset.cert);
 
-  if (!cat && isNaN(smin) && reqCerts.length===0)
+  if (!cat && isNaN(smin) && reqCerts.length===0 && !site)
     { toast('Enter at least one requirement','err'); return; }
 
-  const results = S.products
-    .map(p => ({ p, sc: score(p,{cat,smin,smax,site,reqCerts}) }))
-    .filter(r => r.sc.total>0)
-    .sort((a,b)=>b.sc.total-a.sc.total)
-    .slice(0,10);
+  const criteria = { cat, smin, smax, site, reqCerts };
 
-  renderMatcherResults(results, {cat,smin,smax,reqCerts});
+  const allMatches = S.products
+    .map(p => ({ p, sc: score(p, criteria) }))
+    .filter(r => r.sc !== null && r.sc.total >= 25)
+    .sort((a,b) => b.sc.total - a.sc.total);
+
+  const totalFound = allMatches.length;
+  const results    = allMatches.slice(0, 12);
+
+  renderMatcherResults(results, totalFound);
 }
 
 function score(p, c) {
-  let total=0;
-  const tags=[];
+  const tags = [];
+  let earned = 0, maxPossible = 0;
 
-  /* Category — 40 pts */
+  /* ── Category: hard exclusion if specified and doesn't match ── */
   if (c.cat) {
-    if (p.category===c.cat) { total+=40; tags.push({l:'Category match',t:'y'}); }
-    else                    {            tags.push({l:'Category mismatch',t:'n'}); }
+    if (p.category !== c.cat) return null; // excluded entirely
+    maxPossible += 40;
+    earned      += 40;
+    tags.push({ l:'Category match', t:'y' });
   }
 
-  /* Calibration — 35 pts
-     Logic: customer specifies the exact size they need.
-     If that size falls within the product's manufacturing range → full points.
-     Outside the range → score degrades by distance. */
-  const hasSize = !isNaN(c.smin);
-  if (hasSize && p.calMin!==null) {
+  /* ── Calibration: 35 pts ── */
+  const hasSize = !isNaN(c.smin) && c.smin !== null && String(c.smin) !== '';
+  if (hasSize) {
+    maxPossible += 35;
     const tMin = c.smin;
-    const tMax = (!isNaN(c.smax) && c.smax>c.smin) ? c.smax : c.smin;
-    if (p.calMin<=tMin && p.calMax>=tMax) {
-      total+=35; tags.push({l:'Size match',t:'y'});
+    const tMax = (!isNaN(c.smax) && c.smax > c.smin) ? c.smax : c.smin;
+
+    if (p.calMin !== null && p.calMax !== null) {
+      if (p.calMin <= tMin && p.calMax >= tMax) {
+        earned += 35;
+        tags.push({ l:'Size match', t:'y' });
+      } else {
+        const gap = Math.max(0, tMin - p.calMax) + Math.max(0, p.calMin - tMax);
+        const pts = Math.max(0, 35 - gap * 7);
+        earned += pts;
+        if (pts >= 20)      tags.push({ l:'Near size range', t:'p' });
+        else if (pts >= 8)  tags.push({ l:'Size partially overlaps', t:'p' });
+        else                tags.push({ l:'Size out of range', t:'n' });
+      }
     } else {
-      const d = Math.max(0,tMin-p.calMax) + Math.max(0,p.calMin-tMax);
-      const pts = Math.max(0, 35 - d*7);
-      total+=pts;
-      tags.push(pts>15?{l:`Size near range (+${Math.round(pts)}pt)`,t:'p'}:{l:'Size out of range',t:'n'});
+      // Product has no calibration data — 0 pts, neutral tag
+      tags.push({ l:'No size data', t:'p' });
     }
-  } else if (hasSize && p.calMin===null) {
-    total+=17; // neutral — product has no calibration data
-    tags.push({l:'No size data',t:'p'});
   }
 
-  /* Certifications — 25 pts split equally */
+  /* ── Certifications: 25 pts split equally ── */
   if (c.reqCerts && c.reqCerts.length) {
-    const each=25/c.reqCerts.length;
-    c.reqCerts.forEach(k=>{
-      if (p[k]) { total+=each; tags.push({l:CERTS.find(c=>c.k===k)?.l||k,t:'y'}); }
-      else      {              tags.push({l:(CERTS.find(c=>c.k===k)?.l||k)+' missing',t:'n'}); }
+    maxPossible += 25;
+    const each = 25 / c.reqCerts.length;
+    c.reqCerts.forEach(k => {
+      const label = CERTS.find(ct => ct.k===k)?.l || k;
+      if (p[k]) { earned += each; tags.push({ l: label, t:'y' }); }
+      else      {                 tags.push({ l: label+' missing', t:'n' }); }
     });
   }
 
-  /* Site filter: hard exclusion (not scored) */
-  if (c.site && p.site!==c.site) return {total:0,tags:[{l:'Site mismatch',t:'n'}]};
-
-  // If no scoring criteria were specified at all (e.g. site-only search),
-  // give every passing product a baseline score so they appear in results
-  if (!c.cat && !hasSize && (!c.reqCerts||!c.reqCerts.length)) {
-    total = 50;
-    tags.push({l:'Site match',t:'y'});
+  /* ── Site: +15 bonus (not in maxPossible denominator) ── */
+  if (c.site) {
+    if (p.site === c.site) {
+      earned += 15;
+      tags.push({ l:'Preferred site', t:'y' });
+    } else {
+      tags.push({ l:'Different site ('+p.site+')', t:'p' });
+    }
   }
 
-  return {total:Math.round(Math.min(total,100)), tags};
+  /* ── Normalise ── */
+  if (maxPossible === 0) {
+    // Site-only search: differentiate preferred vs different site so ranking is meaningful
+    const onPreferred = c.site && p.site === c.site;
+    const noSite      = !c.site;
+    return { total: (onPreferred || noSite) ? 100 : 65, tags };
+  }
+
+  const total = Math.min(100, Math.round((earned / maxPossible) * 100));
+  return { total, tags };
 }
 
-function renderMatcherResults(results) {
-  const el=ge('m-results');
+function renderMatcherResults(results, totalFound) {
+  const el = ge('m-results');
   if (!results.length) {
     el.innerHTML=`<div class="empty"><div class="eico">🔍</div><div class="etitle">No matches found</div><div class="esub">Try adjusting your requirements</div></div>`;
     return;
   }
-  const C=2*Math.PI*25; // circumference r=25
-  el.innerHTML = `<div class="mres-title">Found ${results.length} matching product${results.length!==1?'s':''}</div>` +
+  const shown    = results.length;
+  const countMsg = totalFound > shown
+    ? `Showing top <strong>${shown}</strong> of <strong>${totalFound}</strong> matches`
+    : `Found <strong>${totalFound}</strong> matching product${totalFound!==1?'s':''}`;
+
+  const C = 2 * Math.PI * 25;
+  el.innerHTML = `<div class="mres-title">${countMsg}</div>` +
   results.map(({p,sc})=>{
     const pct=sc.total, col=pct>=75?'#16A34A':pct>=50?'#D97706':'#DC2626';
     const dash=`${(pct/100)*C} ${C}`;
@@ -1361,44 +1649,11 @@ function showBanner() {
   ge('sidebar').classList.add('shifted');
 }
 
-function showSetupHelp() {
-  alert(
-    'JSONBin Setup Guide\n\n' +
-    'STEP 1 — Get your Master Key\n' +
-    '• Go to https://jsonbin.io and log in\n' +
-    '• Click your avatar (top right) → "API Keys"\n' +
-    '• Copy the "Master Key" (long string starting with $2b$...)\n\n' +
-    'STEP 2 — Get your Bin ID\n' +
-    '• On jsonbin.io, click on your bin\n' +
-    '• Look at the browser URL bar:\n' +
-    '  https://api.jsonbin.io/v3/b/ ► COPY_THIS_PART ◄\n' +
-    '• Or look for the Bin ID shown on the bin page\n\n' +
-    'STEP 3 — Paste into this file\n' +
-    '• Open this .html file in a text editor (VS Code, Notepad, etc.)\n' +
-    '• Find the CONFIG block near the top of the <script>\n' +
-    '• Replace YOUR_MASTER_KEY_HERE with your Master Key\n' +
-    '• Replace YOUR_BIN_ID_HERE with your Bin ID\n' +
-    '• Save the file and reload it in your browser\n\n' +
-    'That\'s it! All users who open this file will share the same live data.'
-  );
-}
-
 /* ────────────────────────────────────────
   UTILITY HELPERS
 ──────────────────────────────────────── */
 const ge  = id => document.getElementById(id);
 const x   = s  => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-
-/* ────────────────────────────────────────
-  SAMPLE DATA  (used on first run / no storage)
-──────────────────────────────────────── */
-const SAMPLE = [
-  {"id":"2215","Site":"ZUF","Item Number":"2215","Name":"Almond Paste","Category":"Paste"," Weight (kg) ":" 20.000 ","BBD (Days)":"360"," Calibration Min (mm) ":""," Calibration Max (mm) ":"","Organic":"Yes","Vegan":"Yes","RSPO":"No","FT":"No","NOP":"No","RA":"No","Kosher":"No","Halal":"No","Spec":"https://www.kasparag.ch/fileadmin/redaktion/produkte/Entwicklung/Spec_2215_Almond_Paste.pdf","Picture":"https://www.kasparag.ch/fileadmin/_processed_/0/6/csm_Almond_Paste_100__0043_klein_377a182498.jpg"},
-  {"id":"2262","Site":"ZUF","Item Number":"2262","Name":"Croquant Toasted Corn K 1.0-3.0mm","Category":"Croquant"," Weight (kg) ":" 15.000 ","BBD (Days)":"360"," Calibration Min (mm) ":"1,00"," Calibration Max (mm) ":"3,00","Organic":"No","Vegan":"Yes","RSPO":"No","FT":"No","NOP":"No","RA":"No","Kosher":"Yes","Halal":"No","Spec":"","Picture":""},
-  {"id":"2281","Site":"ZUF","Item Number":"2281","Name":"Rice Crisp Salty Roasted 4.0-8.0mm","Category":"Croquant"," Weight (kg) ":" 12.000 ","BBD (Days)":"405"," Calibration Min (mm) ":"4,00"," Calibration Max (mm) ":"8,00","Organic":"No","Vegan":"Yes","RSPO":"No","FT":"No","NOP":"No","RA":"No","Kosher":"Yes","Halal":"No","Spec":"https://www.kasparag.ch/fileadmin/redaktion/produkte/Entwicklung/Spec_2281_Rice_Crisp_Salty_Roasted_4.0-8.0mm.pdf","Picture":""},
-  {"id":"2401","Site":"ZUF","Item Number":"2401","Name":"Caramel Crunch 1.5-4.0mm","Category":"Nougat"," Weight (kg) ":" 25.000 ","BBD (Days)":"360"," Calibration Min (mm) ":"1,50"," Calibration Max (mm) ":"4,00","Organic":"No","Vegan":"No","RSPO":"No","FT":"No","NOP":"No","RA":"No","Kosher":"No","Halal":"No","Spec":"https://www.kasparag.ch/fileadmin/redaktion/produkte/Entwicklung/Spec_2401_Caramel_Crunch_1.5-4.0mm.pdf","Picture":""},
-  {"id":"2403","Site":"ZUF","Item Number":"2403","Name":"Caramel Crunch with 10% Butter H&K 1.0-3.15mm","Category":"Nougat"," Weight (kg) ":" 25.000 ","BBD (Days)":"360"," Calibration Min (mm) ":"1,00"," Calibration Max (mm) ":"3,15","Organic":"No","Vegan":"No","RSPO":"No","FT":"No","NOP":"No","RA":"No","Kosher":"Yes","Halal":"Yes","Spec":"","Picture":""}
-];
 
 /* ────────────────────────────────────────
   INIT
@@ -1410,12 +1665,21 @@ async function init() {
   ge('add-btn').classList.add('hidden');
   ge('up-btn').classList.add('hidden');
 
+  // Restore admin session from previous login (same browser tab session)
+  S.isAdmin = sessionStorage.getItem('ov_admin') === '1';
+
+  // No Supabase Auth — onAuthChange is a no-op
+
+  // Load products from Supabase
   await loadCloud();
 
   renderSidebar();
   S.filtered = [...S.products];
   syncCal();
   applyFilters();
+
+  // Apply admin UI state if already logged in
+  if (S.isAdmin) refreshAdminUI();
 
   hideLoad();
 }
